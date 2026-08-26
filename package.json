@@ -13,7 +13,9 @@
     "react": "19.2.3",
     "react-native": "0.86.2",
     "react-native-gesture-handler": "~2.32.0",
-    "react-native-reanimated": "4.5.1"
+    "react-native-reanimated": "4.5.1",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
@@ -24,7 +26,17 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:apk": "export JAVA_HOME=$HOME/.jdk/jdk-21.0.6+7 && export ANDROID_HOME=$HOME/Android/Sdk && export PATH=$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH && npx expo prebuild --platform android && cd android && echo 'sdk.dir=/home/ahmet/Android/Sdk' > local.properties && ./gradlew assembleDebug && cd .. && cp android/app/build/outputs/apk/debug/app-debug.apk ./TetherTrouble.apk && echo '✅ APK created successfully at ./TetherTrouble.apk'"
+    "doctor": "npx expo-doctor",
+    "build:apk": "export JAVA_HOME=$HOME/.jdk/jdk-21.0.6+7 && export ANDROID_HOME=$HOME/Android/Sdk && export PATH=$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH && find node_modules -name '.cxx' -type d -exec rm -rf {} + 2>/dev/null || true && npx expo-doctor && if [ -d android ]; then cd android && ./gradlew --stop && cd ..; fi && rm -rf android && npx expo prebuild --platform android && mkdir -p android/app/src/main/assets && npx expo export:embed --platform android --dev false --entry-file index.ts --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res && cd android && echo 'sdk.dir=/home/ahmet/Android/Sdk' > local.properties && ./gradlew assembleDebug && cd .. && cp android/app/build/outputs/apk/debug/app-debug.apk ./TetherTrouble.apk && echo '✅ Offline standalone APK created successfully at ./TetherTrouble.apk'"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "expo-av"
+        ]
+      }
+    }
   },
   "private": true
 }

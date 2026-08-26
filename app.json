@@ -10,11 +10,6 @@
       "hidden": true,
       "translucent": true
     },
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
     "ios": {
       "supportsTablet": true
     },
