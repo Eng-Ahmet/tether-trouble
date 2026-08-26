@@ -1,7 +1,13 @@
-# 🐱💥 Tether Trouble: Chop & Drop | لعبة حبل المنجنيق النيون
+# 🐱💥 Tether Trouble: Chop & Drop
 
 <div align="center">
   <img src="assets/docs/banner.png" width="100%" alt="Tether Trouble Wide Banner Showcase" />
+</div>
+
+<div align="center">
+
+**Language / اللغة:** **English** | [العربية](README.ar.md)
+
 </div>
 
 > **A high-octane, hyper-addictive 1-tap mobile physics arcade game built with React Native & Expo (SDK 57).**  
@@ -14,19 +20,19 @@
 
 ---
 
-## 🌟 Overview & Gameplay Mechanics | آلية اللعب والفيزياء
+## 🌟 Overview & Gameplay Mechanics
 
-**Tether Trouble** is built around a single, highly satisfying 1-tap pendulum physics engine: **a mischievous Cyberpunk Cat head and an explosive TNT Bomb orb tethered together by a dynamic 135px elastic rope.**
+**Tether Trouble** is built around a single, highly satisfying 1-tap pendulum physics engine: **a mischievous Cyberpunk Cat head and an explosive TNT Bomb orb tethered together by a dynamic 115px elastic rope.**
 
 > [!TIP]
-> **كيف تلعب؟ (How to Play)**  
-> 1. **التأرجح المستمر (Continuous Pendulum Swing):** تدور الشخصيتان حول بعضهما في مسار دائري سلس وسريع.  
-> 2. **الضغط للتبديل والإنطلاق (Tap to Sling):** اضغط في أي مكان على الشاشة لتبديل مركز الدوران فوراً وإطلاق الشخصية الحرة للأعلى كالمنجنيق.  
-> 3. **تفادي العقبات النيون (Dodge Neon Gates & Sawblades):** اعبر بين الحواجز والمناشير الدوارة بدون أي اصطدام لتحقيق أعلى نقاط وسلسلة كومبو (Combo Multiplier).
+> **How to Play:**  
+> 1. **Continuous Pendulum Swing:** The two characters orbit each other in a smooth, continuous rotational arc.  
+> 2. **Tap to Sling:** Tap anywhere on the screen to instantly swap the pivot point and catapult the free character upward like a slingshot.  
+> 3. **Dodge Obstacles & Sawblades:** Weave between neon barriers and spinning sawblades without crashing to build high scores and combo multipliers.
 
 ```mermaid
 graph TD
-    A["🐱 Cat Head (Anchor 1)"] <-->|"135px Tether Rope"| B["💣 TNT Bomb Orb (Anchor 2)"]
+    A["🐱 Cat Head (Anchor 1)"] <-->|"115px Tether Rope"| B["💣 TNT Bomb Orb (Anchor 2)"]
     subgraph "1-Tap Sling Physics Loop"
         C["Tap Screen"] -->|"Toggle Pivot Point"| D["Current Anchor Swapped"]
         D -->|"Catapult Free Body"| E["Angular Velocity Sling Upward"]
@@ -38,7 +44,7 @@ graph TD
 
 ---
 
-## ⚡ Key Features | المميزات الرئيسية
+## ⚡ Key Features
 
 - 🐱 **High-Resolution PNG Sprite Inventory (`assets/sprites/`):** Custom 3D transparent PNG game graphics for Cat, Bomb, Sawblades, Stars, Gates, Lasers, Sparks, and Rope Anchors.
 - ⏳ **Deterministic Asset Preloader (`SplashScreen`):** Real-time loading progress (`0%` to `100%`) pre-warming PNG image sprites, storage, and audio before entering gameplay.
@@ -47,7 +53,7 @@ graph TD
 - ⚡ **60 FPS Performance:** Dynamic SVG physics engine operating synchronously outside heavy React re-renders.
 - 🔊 **Zero-Latency Procedural Audio Synthesizer:** Pure Web Audio / Expo AudioContext synthesizer producing snappy pops, spring slings, near-miss chimes, and crash bonks.
 - 📳 **Tactile Haptic Feedback:** Integrated `expo-haptics` providing physical feedback for taps, combos, and collisions.
-- 📸 **Viral Meme Fail Cards:** Dynamic freeze-frame fail snapshot screens generating hilarious quotes in Arabic and English (*"الفيزياء غادرت المحادثة 💀"*, *"Physics left the chat 💀"*) and 1-tap social share card.
+- 📸 **Viral Meme Fail Cards:** Dynamic freeze-frame fail snapshot screens generating hilarious quotes in Arabic and English (*"Physics left the chat 💀"*) and 1-tap social share card.
 - 🏆 **High Score & Stats Persistence:** In-memory cached storage for instant `0ms` reads and non-blocking background saves via `@react-native-async-storage/async-storage`.
 
 ---
@@ -57,7 +63,7 @@ graph TD
 ```mermaid
 stateDiagram-v2
     [*] --> SPLASH: Real Progress Asset Preload
-    SPLASH --> MAIN_MENU: Asset Loading Complete (2.0s Hold)
+    SPLASH --> MAIN_MENU: Asset Loading Complete
     MAIN_MENU --> PLAYING: Press Play Button
     MAIN_MENU --> SETTINGS: Press Settings Button
     MAIN_MENU --> TUTORIAL: Press Practice Button
@@ -77,6 +83,9 @@ tether-trouble/
 ├── .agents/
 │   ├── AGENTS.md                  # Project rules, color palettes, and coding standards
 │   └── ARCHITECTURE.md            # System blueprint, pendulum math, and data flow
+├── app/
+│   ├── _layout.tsx                # Expo Router root Stack layout with splash screen integration
+│   └── index.tsx                  # Expo Router index route
 ├── assets/
 │   ├── icon.png                   # Main 1024x1024 app icon
 │   ├── docs/                      # High resolution wide banner hero image
@@ -116,13 +125,16 @@ tether-trouble/
 │       └── engine/
 │           └── PhysicsEngine.ts   # Pendulum vector math & collision engine
 ├── App.tsx                        # Top-level screen state machine
+├── app.json                       # Expo manifest configuration
 ├── package.json                   # Project dependencies and build scripts
+├── README.md                      # English documentation
+├── README.ar.md                   # Arabic documentation
 └── LICENSE                        # GNU AGPL-3.0 License
 ```
 
 ---
 
-## 🚀 Running & Building the App | التشغيل والبناء
+## 🚀 Running & Building the App
 
 ### 1. Prerequisites
 - Node.js (v18+)
