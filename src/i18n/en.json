@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "Tether Trouble",
+    "subtitle": "CHOP & DROP 🐱💥"
+  },
+  "splash": {
+    "loading": "Loading game...",
+    "preparing": "Preparing assets...",
+    "almostReady": "Almost ready..."
+  },
+  "menu": {
+    "play": "START GAME",
+    "settings": "SETTINGS",
+    "stats": "STATS",
+    "tapToSling": "TAP ANYWHERE TO SLING",
+    "bestScore": "BEST SCORE"
+  },
+  "game": {
+    "score": "SCORE",
+    "best": "BEST",
+    "combo": "COMBO",
+    "slip": "SLIP"
+  },
+  "gameOver": {
+    "title": "GAME OVER",
+    "retry": "TAP TO RETRY",
+    "share": "SHARE SCORE",
+    "rank": "RANK",
+    "tip": "Tip: Tap timing shifts pivot anchor and slingshots momentum!"
+  },
+  "settings": {
+    "title": "SETTINGS",
+    "language": "Language",
+    "arabic": "العربية",
+    "english": "English",
+    "sound": "Sound & Effects",
+    "haptics": "Haptic Feedback",
+    "close": "Close"
+  },
+  "stats": {
+    "gamesPlayed": "Games Played",
+    "totalNearMisses": "Total Near Misses",
+    "bestCombo": "Best Combo"
+  },
+  "quotes": [
+    "Physics left the chat 💀",
+    "1 millimeter away from glory 😭",
+    "Calculated... but man am I bad at math 🧮",
+    "The sawblade won this round 🪚",
+    "Cat go BOOM 🐱💥",
+    "My thumb betrayed me 👆",
+    "Top 1% unexpected catastrophe 🙈",
+    "Tether snapped, dignity gone 🚀"
+  ]
+}
