@@ -178,6 +178,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             height={bodyB.radius * 2}
           />
         </G>
+
+        {/* 6. SWING LAUNCH DIRECTION ARROW INDICATOR */}
+        {(() => {
+          const swingingBody = tether.pivotIndex === 0 ? bodyB : bodyA;
+          const launchAngle = tether.currentAngle + (tether.angularVelocity >= 0 ? Math.PI / 2 : -Math.PI / 2);
+          const arrowX = swingingBody.x + Math.cos(launchAngle) * 36;
+          const arrowY = swingingBody.y + Math.sin(launchAngle) * 36;
+          const isPointingUp = Math.sin(launchAngle) < -0.4;
+
+          return (
+            <G key="launch_indicator">
+              {/* Slingshot Trajectory Line */}
+              <Line
+                x1={swingingBody.x}
+                y1={swingingBody.y}
+                x2={arrowX}
+                y2={arrowY}
+                stroke={isPointingUp ? '#FACC15' : '#06B6D4'}
+                strokeWidth={3}
+                strokeDasharray="4,3"
+                opacity={0.9}
+              />
+              <Circle
+                cx={arrowX}
+                cy={arrowY}
+                r={6}
+                fill={isPointingUp ? '#FACC15' : '#06B6D4'}
+              />
+            </G>
+          );
+        })()}
       </Svg>
     </View>
   );

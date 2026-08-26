@@ -19,31 +19,23 @@ export class AssetPreloaderService {
     }
 
     try {
-      // 1. Load i18n localization
-      if (onProgress) onProgress(0.15, 'Loading Localization...');
-      await I18nService.init();
+      // 1. Instant i18n & Storage preload
+      if (onProgress) onProgress(0.2, I18nService.t('splash.preparing'));
+      await Promise.all([I18nService.init(), StorageService.preload()]);
 
-      // 2. Preload Storage
-      if (onProgress) onProgress(0.3, I18nService.t('splash.preparing'));
-      await StorageService.preload();
+      if (onProgress) onProgress(0.5, I18nService.t('splash.loading'));
 
-      // 3. Preload all PNG sprite assets with real step progress
-      const totalAssets = SpriteAssetList.length;
-      let loadedCount = 0;
-
-      for (const assetRef of SpriteAssetList) {
-        await Asset.loadAsync(assetRef);
-        loadedCount += 1;
-        const assetProgress = 0.3 + (loadedCount / totalAssets) * 0.65;
-        const statusText = I18nService.t('splash.loading');
-        if (onProgress) onProgress(assetProgress, statusText);
-      }
+      // 2. Parallel non-blocking asset preloading
+      await Promise.all(
+        SpriteAssetList.map((assetRef) =>
+          Asset.loadAsync(assetRef).catch(() => {})
+        )
+      );
 
       this.isReady = true;
       if (onProgress) onProgress(1.0, I18nService.t('splash.almostReady'));
     } catch (error) {
       console.log('AssetPreloaderService initialization error:', error);
-      // Fallback mark as ready so app does not get stuck
       this.isReady = true;
       if (onProgress) onProgress(1.0, 'Ready');
     }

@@ -3,28 +3,28 @@ import { ObstacleGate, PlayerTetherState, VisualParticle } from '../../types/gam
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 360,
   CANVAS_HEIGHT: 640,
-  ROPE_LENGTH: 110,
-  ENTITY_RADIUS: 22,
-  ROTATION_SPEED_BASE: 0.065, // radians per frame
-  ROTATION_SPEED_MAX: 0.12,
-  WORLD_SPEED_BASE: 2.8,
-  WORLD_SPEED_MAX: 7.5,
-  GATE_SPACING: 260,
-  SAWBLADE_BASE_RADIUS: 28,
-  NEAR_MISS_DISTANCE: 14, // Margin for near miss score bonus
+  ROPE_LENGTH: 135, // Lengthened tether line for smoother swing radius
+  ENTITY_RADIUS: 20, // Slightly more forgiving collision radius
+  ROTATION_SPEED_BASE: 0.052, // Smoother rotation speed for easy timing
+  ROTATION_SPEED_MAX: 0.10,
+  WORLD_SPEED_BASE: 2.2, // Smoother world travel speed for better reaction time
+  WORLD_SPEED_MAX: 6.5,
+  GATE_SPACING: 270,
+  SAWBLADE_BASE_RADIUS: 25,
+  NEAR_MISS_DISTANCE: 16, // Margin for near miss score bonus
 };
 
 export const MEME_FAIL_QUOTES = [
-  "Physics left the chat 💀",
-  "1 millimeter away from viral glory! 😂",
-  "Calculated... but man, am I bad at math 🧮",
-  "The sawblade won this round 🪚",
-  "Cat go BOOM 🐱💥",
-  "My thumb betrayed me 👆",
-  "Top 1% unexpected catastrophe 😭",
-  "Tether snapped, dignity gone 🚀",
-  "Don't show this attempt to my friends 🙈",
-  "A masterclass in failing gracefully ✨"
+  "Physics left the chat",
+  "1 millimeter away from viral glory!",
+  "Calculated... but man, am I bad at math",
+  "The sawblade won this round",
+  "Cat go BOOM",
+  "My thumb betrayed me",
+  "Top 1% unexpected catastrophe",
+  "Tether snapped, dignity gone",
+  "Don't show this attempt to my friends",
+  "A masterclass in failing gracefully"
 ];
 
 export class PhysicsEngine {
@@ -57,15 +57,15 @@ export class PhysicsEngine {
       pivotIndex: 0, // Cat is initial pivot
       ropeLength: ropeLen,
       angularVelocity: GAME_CONSTANTS.ROTATION_SPEED_BASE,
-      currentAngle: Math.PI / 2, // 90 deg vertical
+      currentAngle: -Math.PI / 2, // 90 deg pointing UPWARDS towards next gate
       elasticity: 0.85,
     };
   }
 
   public static togglePivot(tether: PlayerTetherState): PlayerTetherState {
     const newPivot = tether.pivotIndex === 0 ? 1 : 0;
-    // Boost rotation speed slightly on tether swap for satisfying slingshot feel!
-    const newAngularVel = tether.angularVelocity * (tether.angularVelocity > 0 ? 1.05 : -1.05);
+    // Smooth angular velocity swap
+    const newAngularVel = tether.angularVelocity * (tether.angularVelocity > 0 ? 1.03 : -1.03);
 
     return {
       ...tether,
@@ -112,9 +112,9 @@ export class PhysicsEngine {
     difficulty: number,
     customXCenter?: number
   ): ObstacleGate {
-    const minGap = Math.max(135 - difficulty * 3, 95);
-    const gapWidth = minGap;
-    const padding = 60;
+    // Comfortably wide gap width for smooth gameplay balance
+    const gapWidth = Math.max(195 - difficulty * 3, 150);
+    const padding = 55;
     const xCenter =
       customXCenter !== undefined
         ? customXCenter
@@ -123,11 +123,11 @@ export class PhysicsEngine {
     const types: ObstacleGate['type'][] = ['standard', 'sawblade', 'moving', 'double_saw'];
     let selectedType: ObstacleGate['type'] = 'standard';
 
-    if (difficulty > 2) {
+    if (difficulty > 3) {
       const rand = Math.random();
-      if (rand > 0.65) selectedType = 'sawblade';
-      else if (rand > 0.4) selectedType = 'moving';
-      else if (rand > 0.85) selectedType = 'double_saw';
+      if (rand > 0.70) selectedType = 'sawblade';
+      else if (rand > 0.50) selectedType = 'moving';
+      else if (rand > 0.90) selectedType = 'double_saw';
     }
 
     return {
@@ -137,10 +137,10 @@ export class PhysicsEngine {
       gapWidth,
       passed: false,
       type: selectedType,
-      speedX: selectedType === 'moving' ? (Math.random() > 0.5 ? 1.5 : -1.5) * (1 + difficulty * 0.1) : 0,
+      speedX: selectedType === 'moving' ? (Math.random() > 0.5 ? 1.2 : -1.2) * (1 + difficulty * 0.08) : 0,
       sawbladeRadius: GAME_CONSTANTS.SAWBLADE_BASE_RADIUS,
       sawbladeAngle: 0,
-      sawbladeRotationSpeed: 0.08 + Math.random() * 0.05,
+      sawbladeRotationSpeed: 0.06 + Math.random() * 0.04,
     };
   }
 
@@ -157,8 +157,8 @@ export class PhysicsEngine {
     const rightWallEdge = gate.xCenter + gate.gapWidth / 2;
 
     // Gate vertical bounds tolerance
-    const gateTop = gate.y - 18;
-    const gateBottom = gate.y + 18;
+    const gateTop = gate.y - 16;
+    const gateBottom = gate.y + 16;
 
     let collided = false;
     let nearMiss = false;
@@ -169,7 +169,7 @@ export class PhysicsEngine {
       if (body.y + body.radius > gateTop && body.y - body.radius < gateBottom) {
         if (body.x - body.radius < leftWallEdge || body.x + body.radius > rightWallEdge) {
           collided = true;
-          hitCause = 'Crashed into Neon Barrier';
+          hitCause = 'اصطدام بالحاجز النيون';
         }
       }
 
@@ -182,22 +182,22 @@ export class PhysicsEngine {
 
         if (dist < hitDist) {
           collided = true;
-          hitCause = 'Shredded by Sawblade! 🪚';
+          hitCause = 'تمزيق بالمنشار النيون';
         } else if (dist < hitDist + GAME_CONSTANTS.NEAR_MISS_DISTANCE) {
           nearMiss = true;
         }
       }
     });
 
-    // Also check screen boundary collision
+    // Also check screen boundary collision with safe tolerance margin
     if (
-      bodyA.x - bodyA.radius < 0 ||
-      bodyA.x + bodyA.radius > width ||
-      bodyB.x - bodyB.radius < 0 ||
-      bodyB.x + bodyB.radius > width
+      bodyA.x - bodyA.radius < -15 ||
+      bodyA.x + bodyA.radius > width + 15 ||
+      bodyB.x - bodyB.radius < -15 ||
+      bodyB.x + bodyB.radius > width + 15
     ) {
       collided = true;
-      hitCause = 'Slammed into Boundary Wall';
+      hitCause = 'ارتطم بالجدار الجانبي';
     }
 
     return { collided, nearMiss, hitCause };

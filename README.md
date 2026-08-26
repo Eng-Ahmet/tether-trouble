@@ -1,7 +1,11 @@
-# 🐱💥 Tether Trouble: Chop & Drop
+# 🐱💥 Tether Trouble: Chop & Drop | لعبة حبل المنجنيق النيون
 
-> **A high-octane, hyper-addictive 1-tap mobile physics arcade game built with React Native & Expo (SDK 57).**
-> *1-Tap Pendulum Mechanics. Cyberpunk PNG Sprites. 60 FPS Dynamic Engine. AR/EN i18n with RTL.*
+<div align="center">
+  <img src="assets/docs/banner.png" width="100%" alt="Tether Trouble Wide Banner Showcase" />
+</div>
+
+> **A high-octane, hyper-addictive 1-tap mobile physics arcade game built with React Native & Expo (SDK 57).**  
+> *1-Tap Pendulum Mechanics • Cyberpunk PNG Sprites • 60 FPS Dynamic Engine • AR/EN i18n with RTL*
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Expo](https://img.shields.io/badge/Expo-SDK_57-000000.svg)](https://docs.expo.dev/)
@@ -10,20 +14,34 @@
 
 ---
 
-## 🌟 Overview & Mechanics
+## 🌟 Overview & Gameplay Mechanics | آلية اللعب والفيزياء
 
-**Tether Trouble** is built around a single, highly satisfying physics mechanic: **a mischievous Cyberpunk Cat head and an explosive TNT Bomb orb tethered together by a dynamic elastic rope.**
+**Tether Trouble** is built around a single, highly satisfying 1-tap pendulum physics engine: **a mischievous Cyberpunk Cat head and an explosive TNT Bomb orb tethered together by a dynamic 135px elastic rope.**
 
-They spin around each other in continuous pendulum motion. **Tapping anywhere on screen instantly shifts the anchor pivot point and catapults the free entity around the other.**
+> [!TIP]
+> **كيف تلعب؟ (How to Play)**  
+> 1. **التأرجح المستمر (Continuous Pendulum Swing):** تدور الشخصيتان حول بعضهما في مسار دائري سلس وسريع.  
+> 2. **الضغط للتبديل والإنطلاق (Tap to Sling):** اضغط في أي مكان على الشاشة لتبديل مركز الدوران فوراً وإطلاق الشخصية الحرة للأعلى كالمنجنيق.  
+> 3. **تفادي العقبات النيون (Dodge Neon Gates & Sawblades):** اعبر بين الحواجز والمناشير الدوارة بدون أي اصطدام لتحقيق أعلى نقاط وسلسلة كومبو (Combo Multiplier).
 
-Navigate upwards through neon score gates, rotating sawblades, and moving hazards. Slip past hazards with fraction-of-a-millimeter near misses to ignite **Combo Multipliers** (up to 8x) and screen-shaking spark bursts!
+```mermaid
+graph TD
+    A["🐱 Cat Head (Anchor 1)"] <-->|"135px Tether Rope"| B["💣 TNT Bomb Orb (Anchor 2)"]
+    subgraph "1-Tap Sling Physics Loop"
+        C["Tap Screen"] -->|"Toggle Pivot Point"| D["Current Anchor Swapped"]
+        D -->|"Catapult Free Body"| E["Angular Velocity Sling Upward"]
+    end
+    E --> F{"Check Gate Clearance"}
+    F -->|"Clear Gate"| G["➕ Points + Combo Spark Burst"]
+    F -->|"Hit Gate / Sawblade"| H["💥 Meme Fail Snapshot & Sound Bonk"]
+```
 
 ---
 
-## ⚡ Key Features
+## ⚡ Key Features | المميزات الرئيسية
 
 - 🐱 **High-Resolution PNG Sprite Inventory (`assets/sprites/`):** Custom 3D transparent PNG game graphics for Cat, Bomb, Sawblades, Stars, Gates, Lasers, Sparks, and Rope Anchors.
-- ⏳ **Deterministic Asset Preloader (`SplashScreen`):** Real-time loading progress bar (`0%` to `100%`) pre-warming PNG image sprites, storage, and audio before entering gameplay.
+- ⏳ **Deterministic Asset Preloader (`SplashScreen`):** Real-time loading progress (`0%` to `100%`) pre-warming PNG image sprites, storage, and audio before entering gameplay.
 - 🌐 **Arabic & English i18n System (`src/i18n/`):** Full bilingual support with dynamic **RTL (Right-to-Left)** layout formatting for Arabic and **LTR** for English.
 - 🎮 **1-Tap Controls:** Simple 100ms gesture response. Tap anywhere to toggle pivot and catapult forward.
 - ⚡ **60 FPS Performance:** Dynamic SVG physics engine operating synchronously outside heavy React re-renders.
@@ -34,20 +52,21 @@ Navigate upwards through neon score gates, rotating sawblades, and moving hazard
 
 ---
 
-## 🏗️ Tech Stack & Dependency Matrix
+## 🏗️ Architecture & Screen Flow
 
-| Package | Version | Purpose |
-| :--- | :--- | :--- |
-| **`expo`** | `~57.0.16` | Mobile Application Framework |
-| **`react`** | `19.2.3` | UI Component Framework |
-| **`react-native`** | `0.86.2` | Native Mobile Runtime |
-| **`typescript`** | `~6.0.3` | Type Safety |
-| **`expo-asset`** | `^57.0.14` | PNG Image Preloading |
-| **`expo-haptics`** | `~57.0.1` | Native Haptic Feedback |
-| **`expo-av`** | `^16.0.8` | Audio Utilities |
-| **`react-native-svg`** | `--` | 60 FPS SVG Canvas Renderer |
-| **`@react-native-async-storage/async-storage`** | `2.2.0` | Local High Score & Stats Storage |
-| **`lucide-react-native`** | `^1.34.0` | UI Icons |
+```mermaid
+stateDiagram-v2
+    [*] --> SPLASH: Real Progress Asset Preload
+    SPLASH --> MAIN_MENU: Asset Loading Complete (2.0s Hold)
+    MAIN_MENU --> PLAYING: Press Play Button
+    MAIN_MENU --> SETTINGS: Press Settings Button
+    MAIN_MENU --> TUTORIAL: Press Practice Button
+    PLAYING --> GAMEOVER: Collision with Barrier / Sawblade
+    GAMEOVER --> PLAYING: Play Again
+    GAMEOVER --> MAIN_MENU: Return to Menu
+    SETTINGS --> MAIN_MENU: Close Modal
+    TUTORIAL --> MAIN_MENU: Finish Tutorial
+```
 
 ---
 
@@ -60,8 +79,8 @@ tether-trouble/
 │   └── ARCHITECTURE.md            # System blueprint, pendulum math, and data flow
 ├── assets/
 │   ├── icon.png                   # Main 1024x1024 app icon
-│   ├── splash-icon.png            # Splash screen graphic
-│   ├── android-icon-*.png         # Android adaptive icons
+│   ├── docs/                      # High resolution wide banner hero image
+│   │   └── banner.png             # 16:9 Landscape Hero Banner
 │   └── sprites/                   # Transparent PNG Game Sprites
 │       ├── cat.png                # Cyberpunk Cat character (256x256)
 │       ├── bomb.png               # Explosive TNT bomb orb (256x256)
@@ -103,7 +122,7 @@ tether-trouble/
 
 ---
 
-## 🚀 Running & Building the App
+## 🚀 Running & Building the App | التشغيل والبناء
 
 ### 1. Prerequisites
 - Node.js (v18+)

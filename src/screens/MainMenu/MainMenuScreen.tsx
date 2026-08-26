@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Play, Settings, Trophy } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { Play, Settings, Trophy, User, BookOpen, MessageSquare } from 'lucide-react-native';
 import { SpriteAssets } from '../../assets/spriteAssets';
 import { I18nService } from '../../i18n';
 import { StorageService } from '../../services/StorageService';
@@ -10,16 +10,28 @@ import { LanguageSwitcher } from '../../components/LanguageSwitcher/LanguageSwit
 interface MainMenuScreenProps {
   onStartGame: () => void;
   onOpenSettings: () => void;
+  onOpenProfile: () => void;
+  onOpenTutorial: () => void;
 }
 
-export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({ onStartGame, onOpenSettings }) => {
+export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
+  onStartGame,
+  onOpenSettings,
+  onOpenProfile,
+  onOpenTutorial,
+}) => {
   const [, setLangTick] = useState<number>(0);
+  const [randomCatQuote, setRandomCatQuote] = useState<string>(I18nService.getRandomQuote());
   const highScore = StorageService.getHighScoreSync();
   const isRTL = I18nService.isRTL();
 
   useEffect(() => {
+    // Pick a new dynamic quote when menu mounts or language changes
+    setRandomCatQuote(I18nService.getRandomQuote());
+
     return I18nService.subscribe(() => {
       setLangTick((prev) => prev + 1);
+      setRandomCatQuote(I18nService.getRandomQuote());
     });
   }, []);
 
@@ -29,54 +41,91 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({ onStartGame, onO
     onStartGame();
   };
 
-  const handleSettingsPress = () => {
+  const handleQuotePress = () => {
+    audioHaptics.playTapSlingSFX();
     audioHaptics.triggerLightHaptic();
-    onOpenSettings();
+    setRandomCatQuote(I18nService.getRandomQuote());
   };
 
   return (
-    <View style={styles.container}>
-      {/* Top Header Row with Language Switcher */}
-      <View style={[styles.topRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-        <View style={styles.highScoreBadge}>
-          <Trophy size={16} color="#FACC15" />
-          <Text style={styles.highScoreText}>{highScore}</Text>
+    <ImageBackground source={SpriteAssets.menuBg} style={styles.backgroundImage} resizeMode="cover">
+      <View style={styles.container}>
+        {/* Top Header Row with Language Switcher */}
+        <View style={[styles.topRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <TouchableOpacity style={styles.highScoreBadge} activeOpacity={0.8} onPress={onOpenProfile}>
+            <Trophy size={16} color="#FACC15" />
+            <Text style={styles.highScoreText}>{highScore}</Text>
+          </TouchableOpacity>
+
+          <LanguageSwitcher />
         </View>
 
-        <LanguageSwitcher />
-      </View>
+        {/* Hero Cyber Cat (Large Static Size + Dynamic Witty Quote Bubble) */}
+        <View style={styles.heroSection}>
+          <Image
+            source={SpriteAssets.cat}
+            style={styles.heroImageLarge}
+            resizeMode="contain"
+          />
 
-      {/* Hero Visual */}
-      <View style={styles.heroSection}>
-        <Image source={SpriteAssets.cat} style={styles.heroImage} resizeMode="contain" />
-        <Text style={styles.titleText}>{I18nService.t('app.name')}</Text>
-        <Text style={styles.subTitleText}>{I18nService.t('app.subtitle')}</Text>
-      </View>
+          <Text style={styles.titleText}>{I18nService.t('app.name')}</Text>
 
-      {/* Menu Action Buttons */}
-      <View style={styles.buttonSection}>
-        <TouchableOpacity style={styles.playButton} activeOpacity={0.8} onPress={handlePlayPress}>
-          <Play size={26} color="#FFFFFF" fill="#FFFFFF" />
-          <Text style={styles.playText}>{I18nService.t('menu.play')}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quoteCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+            activeOpacity={0.85}
+            onPress={handleQuotePress}
+          >
+            <MessageSquare size={16} color="#FACC15" />
+            <Text style={styles.quoteCardText}>"{randomCatQuote}"</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.settingsButton} activeOpacity={0.8} onPress={handleSettingsPress}>
-          <Settings size={20} color="#06B6D4" />
-          <Text style={styles.settingsText}>{I18nService.t('menu.settings')}</Text>
-        </TouchableOpacity>
+        {/* Menu Action Buttons */}
+        <View style={styles.buttonSection}>
+          <TouchableOpacity style={styles.playButton} activeOpacity={0.8} onPress={handlePlayPress}>
+            <Play size={26} color="#FFFFFF" fill="#FFFFFF" />
+            <Text style={styles.playText}>{I18nService.t('menu.play')}</Text>
+          </TouchableOpacity>
+
+          <View style={[styles.subButtonRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenTutorial}>
+              <BookOpen size={18} color="#FACC15" />
+              <Text style={[styles.subButtonText, { color: '#FACC15' }]}>
+                {I18nService.t('menu.practice')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenProfile}>
+              <User size={18} color="#EC4899" />
+              <Text style={[styles.subButtonText, { color: '#EC4899' }]}>
+                {I18nService.t('menu.profile')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenSettings}>
+              <Settings size={18} color="#06B6D4" />
+              <Text style={styles.subButtonText}>{I18nService.t('menu.settings')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: 'transparent',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 48,
+    paddingTop: 54,
+    paddingBottom: 40,
   },
   topRow: {
     justifyContent: 'space-between',
@@ -101,29 +150,42 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     alignItems: 'center',
+    width: '100%',
   },
-  heroImage: {
-    width: 160,
-    height: 160,
-    marginBottom: 16,
+  heroImageLarge: {
+    width: 220,
+    height: 220,
+    marginBottom: 12,
   },
   titleText: {
     color: '#EC4899',
-    fontSize: 36,
+    fontSize: 34,
     fontWeight: '900',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
     textAlign: 'center',
   },
-  subTitleText: {
-    color: '#FACC15',
-    fontSize: 18,
+  quoteCard: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 18,
+    marginTop: 10,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    maxWidth: '90%',
+  },
+  quoteCardText: {
+    color: '#F8FAFC',
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 2,
-    marginTop: 4,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   buttonSection: {
     width: '100%',
-    gap: 14,
+    gap: 12,
   },
   playButton: {
     flexDirection: 'row',
@@ -145,20 +207,25 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1,
   },
-  settingsButton: {
+  subButtonRow: {
+    width: '100%',
+    gap: 8,
+  },
+  subButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 6,
     backgroundColor: '#1E293B',
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#334155',
   },
-  settingsText: {
+  subButtonText: {
     color: '#06B6D4',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '800',
   },
 });

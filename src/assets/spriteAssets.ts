@@ -8,6 +8,9 @@ export const SpriteAssets = {
   laser: require('../../assets/sprites/laser.png'),
   spark: require('../../assets/sprites/spark.png'),
   ropeAnchor: require('../../assets/sprites/rope_anchor.png'),
+  splashHero: require('../assets/splash_hero.png'),
+  splashPoster: require('../assets/splash_poster.png'),
+  menuBg: require('../assets/menu_bg.png'),
 };
 
 export const SpriteAssetList = [
@@ -19,4 +22,7 @@ export const SpriteAssetList = [
   SpriteAssets.laser,
   SpriteAssets.spark,
   SpriteAssets.ropeAnchor,
+  SpriteAssets.splashHero,
+  SpriteAssets.splashPoster,
+  SpriteAssets.menuBg,
 ];

@@ -1,20 +1,35 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Trophy, Flame, Zap } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Trophy, Flame, Zap, Home } from 'lucide-react-native';
 import { I18nService } from '../../i18n';
+import { audioHaptics } from '../../services/AudioHapticsService';
 
 interface ScoreHUDProps {
   score: number;
   highScore: number;
   combo: number;
   nearMissCount: number;
+  onGoHome?: () => void;
 }
 
-export const ScoreHUD: React.FC<ScoreHUDProps> = React.memo(({ score, highScore, combo, nearMissCount }) => {
+export const ScoreHUD: React.FC<ScoreHUDProps> = React.memo(({ score, highScore, combo, nearMissCount, onGoHome }) => {
+  const handleHomePress = () => {
+    if (onGoHome) {
+      audioHaptics.triggerLightHaptic();
+      onGoHome();
+    }
+  };
+
   return (
-    <View style={styles.hudContainer} pointerEvents="none">
-      {/* High Score Badge */}
+    <View style={styles.hudContainer} pointerEvents="box-none">
+      {/* High Score & Home Button Row */}
       <View style={styles.badgeRow}>
+        {onGoHome && (
+          <TouchableOpacity style={styles.homeButton} activeOpacity={0.7} onPress={handleHomePress}>
+            <Home size={16} color="#06B6D4" />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.badge}>
           <Trophy size={14} color="#FACC15" />
           <Text style={styles.badgeText}>{I18nService.t('game.best')} {highScore}</Text>
@@ -29,16 +44,16 @@ export const ScoreHUD: React.FC<ScoreHUDProps> = React.memo(({ score, highScore,
       </View>
 
       {/* Main Dynamic Score Display */}
-      <View style={styles.scoreBox}>
+      <View style={styles.scoreBox} pointerEvents="none">
         <Text style={styles.scoreText}>{score}</Text>
       </View>
 
       {/* Combo Indicator */}
       {combo > 1 && (
-        <View style={[styles.comboContainer, combo >= 4 && styles.comboContainerHot]}>
+        <View style={[styles.comboContainer, combo >= 4 && styles.comboContainerHot]} pointerEvents="none">
           <Flame size={20} color={combo >= 4 ? '#FFFFFF' : '#F97316'} />
           <Text style={styles.comboText}>
-            {combo >= 8 ? `🔥 MAX 8x ${I18nService.t('game.combo')}` : `${combo}x ${I18nService.t('game.combo')}`}
+            {combo >= 8 ? `MAX 8x ${I18nService.t('game.combo')}` : `${combo}x ${I18nService.t('game.combo')}`}
           </Text>
         </View>
       )}
@@ -57,8 +72,19 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     marginBottom: 8,
+  },
+  homeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#06B6D4',
   },
   badge: {
     flexDirection: 'row',

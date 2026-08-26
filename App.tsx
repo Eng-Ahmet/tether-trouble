@@ -7,13 +7,16 @@ import { GameOverModal } from './src/screens/GameOver/GameOverModal';
 import { SplashScreen } from './src/screens/SplashScreen/SplashScreen';
 import { MainMenuScreen } from './src/screens/MainMenu/MainMenuScreen';
 import { SettingsModal } from './src/screens/Settings/SettingsModal';
+import { TutorialModal } from './src/components/TutorialModal/TutorialModal';
+import { ProfileModal } from './src/screens/Profile/ProfileModal';
+import { InteractiveTutorialScreen } from './src/screens/Tutorial/InteractiveTutorialScreen';
 import { PhysicsEngine, GAME_CONSTANTS } from './src/game/engine/PhysicsEngine';
 import { GameStatus, MemeFailSnapshot, ObstacleGate, PlayerTetherState, VisualParticle } from './src/types/game';
 import { audioHaptics } from './src/services/AudioHapticsService';
 import { StorageService } from './src/services/StorageService';
 import { I18nService } from './src/i18n';
 
-type AppScreen = 'SPLASH' | 'MAIN_MENU' | 'PLAYING' | 'SETTINGS';
+type AppScreen = 'SPLASH' | 'MAIN_MENU' | 'TUTORIAL' | 'PRACTICE' | 'PROFILE' | 'PLAYING' | 'SETTINGS';
 
 export default function App() {
   const { width, height } = useWindowDimensions();
@@ -22,83 +25,79 @@ export default function App() {
 
   const [appScreen, setAppScreen] = useState<AppScreen>('SPLASH');
   const [gameStatus, setGameStatus] = useState<GameStatus>('IDLE');
+  const gameStatusRef = useRef<GameStatus>('IDLE');
+
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
   const [combo, setCombo] = useState<number>(1);
   const [nearMissCount, setNearMissCount] = useState<number>(0);
   const [failSnapshot, setFailSnapshot] = useState<MemeFailSnapshot | null>(null);
 
-  // Game Loop References (Zero React render per frame overhead)
+  // Refs for 60 FPS hot path physics loop
+  const cameraScrollYRef = useRef<number>(0);
   const tetherRef = useRef<PlayerTetherState>(PhysicsEngine.initTetherState(screenWidth, screenHeight));
   const gatesRef = useRef<ObstacleGate[]>([]);
   const particlesRef = useRef<VisualParticle[]>([]);
-  const frameIdRef = useRef<number | null>(null);
   const scoreRef = useRef<number>(0);
   const comboRef = useRef<number>(1);
   const nearMissRef = useRef<number>(0);
   const difficultyRef = useRef<number>(1);
-  const cameraScrollYRef = useRef<number>(0);
+  const frameIdRef = useRef<number | null>(null);
 
-  // Screen Shake animation
-  const shakeAnimX = useRef(new Animated.Value(0)).current;
-  const shakeAnimY = useRef(new Animated.Value(0)).current;
+  // Screen shake animation
+  const shakeAnim = useRef(new Animated.Value(0)).current;
   const [shakeOffset, setShakeOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const triggerScreenShake = useCallback(() => {
-    shakeAnimX.setValue(Math.random() * 12 - 6);
-    shakeAnimY.setValue(Math.random() * 12 - 6);
-    Animated.parallel([
-      Animated.spring(shakeAnimX, { toValue: 0, friction: 4, useNativeDriver: true }),
-      Animated.spring(shakeAnimY, { toValue: 0, friction: 4, useNativeDriver: true }),
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 12, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -12, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
     ]).start();
-  }, [shakeAnimX, shakeAnimY]);
+  }, [shakeAnim]);
 
   useEffect(() => {
-    const listenerX = shakeAnimX.addListener((v) => setShakeOffset((prev) => ({ ...prev, x: v.value })));
-    const listenerY = shakeAnimY.addListener((v) => setShakeOffset((prev) => ({ ...prev, y: v.value })));
-    return () => {
-      shakeAnimX.removeListener(listenerX);
-      shakeAnimY.removeListener(listenerY);
-    };
-  }, [shakeAnimX, shakeAnimY]);
+    const id = shakeAnim.addListener(({ value }) => {
+      setShakeOffset({
+        x: (Math.random() - 0.5) * value,
+        y: (Math.random() - 0.5) * value,
+      });
+    });
+    return () => shakeAnim.removeListener(id);
+  }, [shakeAnim]);
 
-  // Initial game setup
+  // Start new game session
   const startGame = useCallback(() => {
-    tetherRef.current = PhysicsEngine.initTetherState(screenWidth, screenHeight);
-    
-    // Player initial Y position
-    const playerY = screenHeight * 0.72;
-
-    // Spawn initial wave of obstacle gates starting safely above the player
-    const initialGates: ObstacleGate[] = [];
-    for (let i = 1; i <= 4; i++) {
-      const gateY = playerY - i * GAME_CONSTANTS.GATE_SPACING;
-      // First 2 gates are centered on screenWidth / 2 for a smooth start
-      const customX = i <= 2 ? screenWidth / 2 : undefined;
-      initialGates.push(PhysicsEngine.generateObstacle(`gate_${i}`, gateY, screenWidth, 1, customX));
-    }
-
-    gatesRef.current = initialGates;
-    particlesRef.current = [];
     scoreRef.current = 0;
     comboRef.current = 1;
     nearMissRef.current = 0;
     difficultyRef.current = 1;
     cameraScrollYRef.current = 0;
 
+    tetherRef.current = PhysicsEngine.initTetherState(screenWidth, screenHeight);
+    gatesRef.current = [
+      PhysicsEngine.generateObstacle('gate_start_1', screenHeight - 700, screenWidth, 1, screenWidth / 2),
+      PhysicsEngine.generateObstacle('gate_start_2', screenHeight - 1100, screenWidth, 1),
+    ];
+    particlesRef.current = [];
+
     setScore(0);
     setCombo(1);
     setNearMissCount(0);
     setFailSnapshot(null);
+    gameStatusRef.current = 'PLAYING';
     setGameStatus('PLAYING');
 
     audioHaptics.playTapSlingSFX();
     audioHaptics.triggerMediumHaptic();
   }, [screenWidth, screenHeight]);
 
+  const [, setRenderTick] = useState<number>(0);
+
   // Main high-performance 60 FPS Game Loop
   const gameLoop = useCallback(() => {
-    if (gameStatus !== 'PLAYING') return;
+    if (gameStatusRef.current !== 'PLAYING') return;
 
     // 1. Scroll vertical world downward as player travels up
     const worldSpeed = GAME_CONSTANTS.WORLD_SPEED_BASE + difficultyRef.current * 0.35;
@@ -165,7 +164,10 @@ export default function App() {
       }))
       .filter((p) => p.life < p.maxLife);
 
-    // 6. Collision & Near-Miss Detection
+    // 6. Force React to re-render GameCanvas with updated refs
+    setRenderTick((t) => (t + 1) % 10000);
+
+    // 7. Collision & Near-Miss Detection
     let hitDetected = false;
     let hitCauseText = '';
 
@@ -217,15 +219,17 @@ export default function App() {
         snapshotTime: new Date().toLocaleTimeString(),
       });
 
+      gameStatusRef.current = 'GAMEOVER';
       setGameStatus('GAMEOVER');
       return;
     }
 
     frameIdRef.current = requestAnimationFrame(gameLoop);
-  }, [gameStatus, screenWidth, screenHeight, triggerScreenShake]);
+  }, [screenWidth, screenHeight, triggerScreenShake]);
 
   useEffect(() => {
     if (gameStatus === 'PLAYING') {
+      gameStatusRef.current = 'PLAYING';
       frameIdRef.current = requestAnimationFrame(gameLoop);
     }
     return () => {
@@ -257,15 +261,46 @@ export default function App() {
     return (
       <MainMenuScreen
         onStartGame={() => {
-          startGame();
-          setAppScreen('PLAYING');
+          setAppScreen('TUTORIAL');
         }}
         onOpenSettings={() => setAppScreen('SETTINGS')}
+        onOpenProfile={() => setAppScreen('PROFILE')}
+        onOpenTutorial={() => setAppScreen('PRACTICE')}
       />
     );
   }
 
-  // 3. SETTINGS MODAL SCREEN
+  // 3. TUTORIAL COACHMARK SCREEN
+  if (appScreen === 'TUTORIAL') {
+    return (
+      <TutorialModal
+        onStart={() => {
+          startGame();
+          setAppScreen('PLAYING');
+        }}
+      />
+    );
+  }
+
+  // 4. INTERACTIVE PRACTICE SIMULATOR SCREEN
+  if (appScreen === 'PRACTICE') {
+    return (
+      <InteractiveTutorialScreen
+        onBack={() => setAppScreen('MAIN_MENU')}
+        onStartGame={() => {
+          startGame();
+          setAppScreen('PLAYING');
+        }}
+      />
+    );
+  }
+
+  // 5. PROFILE & ACHIEVEMENTS MODAL SCREEN
+  if (appScreen === 'PROFILE') {
+    return <ProfileModal onClose={() => setAppScreen('MAIN_MENU')} />;
+  }
+
+  // 6. SETTINGS MODAL SCREEN
   if (appScreen === 'SETTINGS') {
     return <SettingsModal onClose={() => setAppScreen('MAIN_MENU')} />;
   }
@@ -287,16 +322,34 @@ export default function App() {
             screenShakeOffset={shakeOffset}
           />
 
-          {/* Floating Minimal HUD */}
+          {/* Floating Minimal HUD with Home button */}
           {gameStatus === 'PLAYING' && (
-            <ScoreHUD score={score} highScore={highScore} combo={combo} nearMissCount={nearMissCount} />
+            <ScoreHUD
+              score={score}
+              highScore={highScore}
+              combo={combo}
+              nearMissCount={nearMissCount}
+              onGoHome={() => {
+                gameStatusRef.current = 'IDLE';
+                setGameStatus('IDLE');
+                setAppScreen('MAIN_MENU');
+              }}
+            />
           )}
         </View>
       </TouchableWithoutFeedback>
 
-      {/* Game Over Meme Share Screen */}
+      {/* Game Over Meme Share Screen with Home button */}
       {gameStatus === 'GAMEOVER' && failSnapshot && (
-        <GameOverModal snapshot={failSnapshot} onRestart={startGame} />
+        <GameOverModal
+          snapshot={failSnapshot}
+          onRestart={startGame}
+          onGoHome={() => {
+            gameStatusRef.current = 'IDLE';
+            setGameStatus('IDLE');
+            setAppScreen('MAIN_MENU');
+          }}
+        />
       )}
     </View>
   );

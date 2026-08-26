@@ -1,55 +1,115 @@
 {
   "app": {
     "name": "Tether Trouble",
-    "subtitle": "CHOP & DROP 🐱💥"
+    "subtitle": "CHOP & DROP"
   },
   "splash": {
-    "loading": "Loading game...",
-    "preparing": "Preparing assets...",
-    "almostReady": "Almost ready..."
+    "loading": "Loading Game Assets...",
+    "preparing": "Preloading Audio & Haptics...",
+    "almostReady": "Almost Ready..."
   },
   "menu": {
-    "play": "START GAME",
+    "play": "PLAY NOW",
     "settings": "SETTINGS",
     "stats": "STATS",
-    "tapToSling": "TAP ANYWHERE TO SLING",
-    "bestScore": "BEST SCORE"
+    "tapToSling": "TAP ANYWHERE TO SLINGSHOT",
+    "bestScore": "BEST SCORE",
+    "practice": "PRACTICE",
+    "profile": "PROFILE",
+    "home": "HOME"
   },
   "game": {
     "score": "SCORE",
     "best": "BEST",
     "combo": "COMBO",
-    "slip": "SLIP"
+    "slip": "NEAR MISS"
   },
   "gameOver": {
     "title": "GAME OVER",
-    "retry": "TAP TO RETRY",
-    "share": "SHARE SCORE",
+    "wasted": "GAME OVER",
+    "retry": "TRY AGAIN",
+    "playAgain": "PLAY AGAIN",
+    "share": "SHARE",
     "rank": "RANK",
-    "tip": "Tip: Tap timing shifts pivot anchor and slingshots momentum!"
+    "home": "HOME",
+    "menu": "MAIN MENU",
+    "tip": "Tip: Tap timing shifts the pivot anchor and boosts velocity!"
   },
   "settings": {
     "title": "SETTINGS",
-    "language": "Language",
+    "language": "LANGUAGE",
     "arabic": "العربية",
     "english": "English",
-    "sound": "Sound & Effects",
-    "haptics": "Haptic Feedback",
-    "close": "Close"
+    "sound": "AUDIO EFFECTS",
+    "haptics": "HAPTIC FEEDBACK",
+    "close": "CLOSE",
+    "returnHome": "RETURN TO HOME PAGE",
+    "audioSettings": "AUDIO & SOUND EFFECTS",
+    "soundFX": "SOUND EFFECTS",
+    "vibration": "VIBRATION & HAPTICS",
+    "quickStats": "QUICK PLAYER STATS",
+    "gamesPlayed": "Games Played",
+    "totalScore": "Total Near Misses",
+    "maxCombo": "Best Combo Multiplier",
+    "done": "SAVE & CLOSE"
   },
   "stats": {
     "gamesPlayed": "Games Played",
     "totalNearMisses": "Total Near Misses",
     "bestCombo": "Best Combo"
   },
+  "ranks": {
+    "neonLegend": "NEON LEGEND",
+    "slingshotMaster": "SLINGSHOT MASTER",
+    "swingPro": "SWING PRO",
+    "noviceFlyer": "NOVICE FLYER",
+    "sRank": "S RANK",
+    "aRank": "A RANK",
+    "bRank": "B RANK",
+    "cRank": "C RANK"
+  },
+  "profile": {
+    "title": "PROFILE & ACHIEVEMENTS",
+    "badgesHeader": "BADGES & ACHIEVEMENTS",
+    "returnHome": "RETURN TO HOME PAGE"
+  },
+  "achievements": {
+    "firstFlightTitle": "First Flight",
+    "firstFlightDesc": "Scored your first point",
+    "comboMasterTitle": "Combo Master",
+    "comboMasterDesc": "Reached 4x combo multiplier",
+    "nearMissProTitle": "Slip Dodger",
+    "nearMissProDesc": "Executed 10 near misses",
+    "legendaryTitle": "Cyber Legend",
+    "legendaryDesc": "Reached 20+ points score"
+  },
+  "tutorial": {
+    "simulatorTitle": "TRAINING SIMULATOR",
+    "liveSimHeader": "LIVE SLOWED INTERACTIVE SIMULATION",
+    "practiceTap": "PRACTICE TAP",
+    "hintPerfect": "PERFECT! Arrow points UP — TAP NOW TO LAUNCH!",
+    "hintWait": "Wait for rotation until arrow points UPWARDS",
+    "step1Text": "Tapping swaps the anchor pivot between Cat and Bomb to build momentum.",
+    "step2Text": "Perfect timing is when the yellow arrow points upwards towards the gate!",
+    "startRealGame": "START REAL GAME NOW",
+    "howToTitle": "HOW TO CONTROL & PLAY",
+    "howToSubtitle": "Master Slingshot Timing in 3 Steps",
+    "step1Title": "1. CONTINUOUS SPIN",
+    "step1Desc": "The Cat and Bomb continuously spin around each other on an elastic rope.",
+    "step2Title": "2. PERFECT TAP TIMING",
+    "step2Desc": "When the swinging entity points UPWARDS, tap anywhere on screen to catapult forward!",
+    "step3Title": "3. PASS GATES & SCORE",
+    "step3Desc": "Pass cleanly through gate gaps and avoid sawblades or screen boundary walls!",
+    "gotItStart": "GOT IT, START PLAYING NOW"
+  },
   "quotes": [
-    "Physics left the chat 💀",
-    "1 millimeter away from glory 😭",
-    "Calculated... but man am I bad at math 🧮",
-    "The sawblade won this round 🪚",
-    "Cat go BOOM 🐱💥",
-    "My thumb betrayed me 👆",
-    "Top 1% unexpected catastrophe 🙈",
-    "Tether snapped, dignity gone 🚀"
+    "Physics left the chat",
+    "1 millimeter away from glory",
+    "Calculated... but man am I bad at math",
+    "The sawblade won this round",
+    "Cat go BOOM",
+    "My thumb betrayed me",
+    "Top 1% unexpected catastrophe",
+    "Tether snapped, dignity gone"
   ]
 }

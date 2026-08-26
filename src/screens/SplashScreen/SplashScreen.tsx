@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, Animated } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, ImageBackground } from 'react-native';
 import { AssetPreloaderService } from '../../services/AssetPreloaderService';
 import { SpriteAssets } from '../../assets/spriteAssets';
 import { I18nService } from '../../i18n';
@@ -9,57 +9,52 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
-  const [progress, setProgress] = useState<number>(0);
-  const [statusText, setStatusText] = useState<string>('Initializing...');
-  const [pulseAnim] = useState(new Animated.Value(1));
+  const [statusText, setStatusText] = useState<string>(I18nService.t('splash.loading'));
+
+  const fadeOutAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(0.6)).current;
 
   useEffect(() => {
-    // Pulse logo animation
+    // Elegant pulsing animation for loading text (no progress bar)
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.08, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.5, duration: 800, useNativeDriver: true }),
       ])
     ).start();
 
-    // Start asset preloader
+    // Fast asset preloader
     AssetPreloaderService.initialize((prog, status) => {
-      setProgress(prog);
       setStatusText(status);
 
       if (prog >= 1.0) {
+        // Hold splash screen for 2.0s to view clean artwork
         setTimeout(() => {
-          onFinish();
-        }, 400);
+          Animated.timing(fadeOutAnim, {
+            toValue: 0,
+            duration: 350,
+            useNativeDriver: true,
+          }).start(() => {
+            onFinish();
+          });
+        }, 2000);
       }
     });
-  }, [onFinish, pulseAnim]);
-
-  const percentInt = Math.min(Math.round(progress * 100), 100);
-  const isRTL = I18nService.isRTL();
+  }, [fadeOutAnim, onFinish, pulseAnim]);
 
   return (
-    <View style={styles.container}>
-      {/* Centered Cyberpunk Logo Icon */}
-      <Animated.View style={[styles.logoBox, { transform: [{ scale: pulseAnim }] }]}>
-        <Image source={SpriteAssets.cat} style={styles.catImage} resizeMode="contain" />
-      </Animated.View>
-
-      <Text style={styles.titleText}>{I18nService.t('app.name')}</Text>
-      <Text style={styles.subtitleText}>{I18nService.t('app.subtitle')}</Text>
-
-      {/* Progress Section */}
-      <View style={styles.progressSection}>
-        <Text style={[styles.statusText, { textAlign: isRTL ? 'right' : 'left' }]}>{statusText}</Text>
-
-        {/* Progress Bar Outer */}
-        <View style={styles.progressBarTrack}>
-          <View style={[styles.progressBarFill, { width: `${percentInt}%` }]} />
-        </View>
-
-        <Text style={styles.percentText}>{percentInt}%</Text>
-      </View>
-    </View>
+    <Animated.View style={[styles.container, { opacity: fadeOutAnim }]}>
+      <ImageBackground
+        source={SpriteAssets.splashPoster}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        {/* Sleek Floating Text Indicator (No Progress Bar Box) */}
+        <Animated.View style={[styles.bottomTextWrapper, { opacity: pulseAnim }]}>
+          <Text style={styles.loadingText}>{statusText}</Text>
+        </Animated.View>
+      </ImageBackground>
+    </Animated.View>
   );
 };
 
@@ -67,66 +62,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
-  logoBox: {
-    width: 140,
-    height: 140,
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  catImage: {
-    width: 140,
-    height: 140,
-  },
-  titleText: {
-    color: '#EC4899',
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -1,
-    textAlign: 'center',
-  },
-  subtitleText: {
-    color: '#FACC15',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginTop: 4,
-    marginBottom: 48,
-  },
-  progressSection: {
+  backgroundImage: {
+    flex: 1,
     width: '100%',
-    maxWidth: 280,
-    alignItems: 'center',
-  },
-  statusText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-    width: '100%',
-  },
-  progressBarTrack: {
-    width: '100%',
-    height: 12,
-    backgroundColor: '#1E293B',
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  progressBarFill: {
     height: '100%',
-    backgroundColor: '#06B6D4',
-    borderRadius: 8,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  percentText: {
+  bottomTextWrapper: {
+    position: 'absolute',
+    bottom: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+  },
+  loadingText: {
     color: '#06B6D4',
     fontSize: 14,
     fontWeight: '900',
-    marginTop: 8,
+    letterSpacing: 1,
+    textAlign: 'center',
   },
 });
