@@ -3,6 +3,7 @@
     "name": "Tether Trouble",
     "slug": "tether-trouble",
     "version": "1.0.0",
+    "scheme": "tether-trouble",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -25,6 +26,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
