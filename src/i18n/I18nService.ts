@@ -34,13 +34,13 @@ class I18nManagerService {
     return this.currentLang;
   }
 
-  public async setLanguage(lang: LanguageCode): Promise<void> {
+  public setLanguage(lang: LanguageCode): void {
     if (this.currentLang === lang) return;
     this.currentLang = lang;
-    try {
-      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-    } catch (e) {}
     this.notifySubscribers();
+    AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang).catch((e) => {
+      console.log('Error saving language:', e);
+    });
   }
 
   public isRTL(): boolean {
@@ -72,6 +72,30 @@ class I18nManagerService {
   public getRandomQuote(): string {
     const quotes = this.dictionaries[this.currentLang]?.quotes || enDict.quotes;
     return quotes[Math.floor(Math.random() * quotes.length)];
+  }
+
+  public getCauseQuote(causeType: string): string {
+    const causeQuotes = this.dictionaries[this.currentLang]?.causeQuotes || enDict.causeQuotes;
+    if (causeQuotes && causeQuotes[causeType]) {
+      const val = causeQuotes[causeType];
+      if (Array.isArray(val)) {
+        return val[Math.floor(Math.random() * val.length)];
+      }
+      if (typeof val === 'string') {
+        return val;
+      }
+    }
+    return this.getRandomQuote();
+  }
+
+  public getSmartTip(): string {
+    const titles = this.dictionaries[this.currentLang]?.developerTitles || enDict.developerTitles;
+    const tips = this.dictionaries[this.currentLang]?.smartTips || enDict.smartTips;
+
+    const title = titles && Array.isArray(titles) ? titles[Math.floor(Math.random() * titles.length)] : 'مفكر حالم ذكي';
+    const tip = tips && Array.isArray(tips) ? tips[Math.floor(Math.random() * tips.length)] : this.t('gameOver.tip');
+
+    return `${title}: ${tip}`;
   }
 
   public subscribe(listener: Listener): () => void {

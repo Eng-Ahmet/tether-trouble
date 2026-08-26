@@ -15,24 +15,26 @@ export const InteractiveTutorialScreen: React.FC<InteractiveTutorialScreenProps>
   const isRTL = I18nService.isRTL();
   const [pivotIndex, setPivotIndex] = useState<number>(0);
   const [angle, setAngle] = useState<number>(0);
+  const [spinSpeed, setSpinSpeed] = useState<number>(0.035);
   const [practiceScore, setPracticeScore] = useState<number>(0);
 
   // Slowed Down Simulation Rotation Loop (Gentle & Readable Speed)
   useEffect(() => {
     const interval = setInterval(() => {
-      setAngle((prev) => (prev + 0.035) % (Math.PI * 2));
+      setAngle((prev) => (prev + spinSpeed) % (Math.PI * 2));
     }, 16);
     return () => clearInterval(interval);
-  }, []);
+  }, [spinSpeed]);
 
   const handlePracticeTap = () => {
     setPivotIndex((prev) => (prev === 0 ? 1 : 0));
+    setSpinSpeed((prev) => -prev); // Flip rotation direction (Clockwise <-> Counter-Clockwise)
     setPracticeScore((prev) => prev + 1);
     audioHaptics.playTapSlingSFX();
     audioHaptics.triggerLightHaptic();
   };
 
-  const ropeLength = 90;
+  const ropeLength = 60;
   const simCenterX = 150;
   const simCenterY = 130;
 
@@ -83,16 +85,7 @@ export const InteractiveTutorialScreen: React.FC<InteractiveTutorialScreenProps>
               strokeLinecap="round"
             />
 
-            {/* Target Sling Trajectory Pointer */}
-            <Line
-              x1={pivotIndex === 0 ? bombX : catX}
-              y1={pivotIndex === 0 ? bombY : catY}
-              x2={(pivotIndex === 0 ? bombX : catX) + Math.cos(launchAngle) * 32}
-              y2={(pivotIndex === 0 ? bombY : catY) + Math.sin(launchAngle) * 32}
-              stroke={isPointingUp ? '#FACC15' : '#06B6D4'}
-              strokeWidth={3}
-              strokeDasharray="4,3"
-            />
+
 
             {/* Cat Sprite */}
             <SvgImage
@@ -110,15 +103,6 @@ export const InteractiveTutorialScreen: React.FC<InteractiveTutorialScreenProps>
               y={bombY - 20}
               width={40}
               height={40}
-            />
-
-            {/* Anchor Glow Ring */}
-            <SvgImage
-              href={SpriteAssets.ropeAnchor}
-              x={(pivotIndex === 0 ? catX : bombX) - 26}
-              y={(pivotIndex === 0 ? catY : bombY) - 26}
-              width={52}
-              height={52}
             />
           </Svg>
 
@@ -154,6 +138,13 @@ export const InteractiveTutorialScreen: React.FC<InteractiveTutorialScreenProps>
           <CheckCircle2 size={18} color="#FACC15" />
           <Text style={[styles.instructionText, { textAlign: isRTL ? 'right' : 'left' }]}>
             {I18nService.t('tutorial.step2Text')}
+          </Text>
+        </View>
+
+        <View style={[styles.instructionRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <CheckCircle2 size={18} color="#EC4899" />
+          <Text style={[styles.instructionText, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {I18nService.t('tutorial.step3Text')}
           </Text>
         </View>
       </View>

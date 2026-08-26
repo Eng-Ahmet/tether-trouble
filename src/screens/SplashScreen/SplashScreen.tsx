@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, ImageBackground } from 'react-native';
+import { Text, StyleSheet, Animated, ImageBackground } from 'react-native';
 import { AssetPreloaderService } from '../../services/AssetPreloaderService';
 import { SpriteAssets } from '../../assets/spriteAssets';
 import { I18nService } from '../../i18n';
@@ -10,35 +10,69 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [statusText, setStatusText] = useState<string>(I18nService.t('splash.loading'));
+  const [progress, setProgress] = useState<number>(0);
 
   const fadeOutAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(0.6)).current;
 
+  const mountedRef = useRef<boolean>(true);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    // Elegant pulsing animation for loading text (no progress bar)
-    Animated.loop(
+    mountedRef.current = true;
+
+    // Elegant pulsing animation for loading indicator
+    const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 0.5, duration: 800, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    pulseLoop.start();
 
-    // Fast asset preloader
-    AssetPreloaderService.initialize((prog, status) => {
-      setStatusText(status);
+    const runPreloadAndHold = async () => {
+      // 1. Critical Preload Execution
+      await AssetPreloaderService.initialize((prog, status) => {
+        if (!mountedRef.current) return;
+        setProgress(prog);
+        setStatusText(status);
+      });
 
-      if (prog >= 1.0) {
-        // Instant transition as soon as assets are ready (0ms delay)
+      if (!mountedRef.current) return;
+
+      // Ensure state is 100% complete
+      setProgress(1.0);
+      setStatusText(I18nService.t('splash.almostReady'));
+
+      // 2. Mandatory 2.5 Second Branded Hold AFTER Preload Completes
+      holdTimerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return;
+
+        // 3. Smooth Fade Out -> Main Menu
         Animated.timing(fadeOutAnim, {
           toValue: 0,
-          duration: 150,
+          duration: 300,
           useNativeDriver: true,
         }).start(() => {
-          onFinish();
+          if (mountedRef.current) {
+            onFinish();
+          }
         });
+      }, 2500);
+    };
+
+    runPreloadAndHold();
+
+    return () => {
+      mountedRef.current = false;
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
       }
-    });
+      pulseLoop.stop();
+    };
   }, [fadeOutAnim, onFinish, pulseAnim]);
+
+  const percentage = Math.round(progress * 100);
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeOutAnim }]}>
@@ -47,9 +81,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {/* Sleek Floating Text Indicator (No Progress Bar Box) */}
+        {/* Sleek Floating Text & Progress Indicator */}
         <Animated.View style={[styles.bottomTextWrapper, { opacity: pulseAnim }]}>
-          <Text style={styles.loadingText}>{statusText}</Text>
+          <Text style={styles.loadingText}>
+            {statusText} • {percentage}%
+          </Text>
         </Animated.View>
       </ImageBackground>
     </Animated.View>
@@ -88,3 +124,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

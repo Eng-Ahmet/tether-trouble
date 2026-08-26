@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image as RNImage } from 'react-native';
 import Svg, { Circle, Line, Path, Rect, G, Defs, LinearGradient, Stop, Image as SvgImage } from 'react-native-svg';
 import { ObstacleGate, PlayerTetherState, VisualParticle } from '../../types/game';
 import { SpriteAssets } from '../../assets/spriteAssets';
+import { PhysicsEngine } from '../../game/engine/PhysicsEngine';
 
 interface GameCanvasProps {
   width: number;
@@ -23,6 +24,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 }) => {
   const { bodyA, bodyB } = tether;
 
+  const sawbladeAsset = RNImage.resolveAssetSource(SpriteAssets.sawblade);
+  const catAsset = RNImage.resolveAssetSource(SpriteAssets.cat);
+  const bombAsset = RNImage.resolveAssetSource(SpriteAssets.bomb);
+  const starAsset = RNImage.resolveAssetSource(SpriteAssets.star);
+
+  // Synchronous hot path calculation for hazard proximity in RED (#EF4444)
+  const dangerProximity = PhysicsEngine.calculateDangerProximity(tether, gates, width);
+  const warningAlpha = Math.max(dangerProximity, 0);
+
   return (
     <View style={[styles.container, { transform: [{ translateX: screenShakeOffset.x }, { translateY: screenShakeOffset.y }] }]}>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
@@ -33,14 +43,44 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             <Stop offset="50%" stopColor="#3B82F6" stopOpacity="1" />
             <Stop offset="100%" stopColor="#06B6D4" stopOpacity="1" />
           </LinearGradient>
+          {/* Danger Warning Glow Gradient */}
+          <LinearGradient id="dangerGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#EF4444" stopOpacity="0.8" />
+            <Stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
+          </LinearGradient>
         </Defs>
 
-        {/* 1. OBSTACLES & GATES */}
+        {/* 1. SIDE HAZARD BORDER STRIPES (Visually Demarcated Side Bounds) */}
+        <Line x1={4} y1={0} x2={4} y2={height} stroke="#EF4444" strokeWidth={3} strokeDasharray="8,6" opacity={0.65} />
+        <Line x1={width - 4} y1={0} x2={width - 4} y2={height} stroke="#EF4444" strokeWidth={3} strokeDasharray="8,6" opacity={0.65} />
+
+        {/* 2. DANGER PROXIMITY CORNER WARNING GRAPHICS */}
+        {warningAlpha > 0 && (
+          <G opacity={warningAlpha}>
+            {/* Top-Left Corner Warning */}
+            <Path d="M 0 0 L 40 0 L 0 40 Z" fill="#EF4444" opacity={0.4} />
+            <Path d="M 4 4 L 35 4 L 4 35" stroke="#FACC15" strokeWidth={3} fill="none" />
+
+            {/* Top-Right Corner Warning */}
+            <Path d={`M ${width} 0 L ${width - 40} 0 L ${width} 40 Z`} fill="#EF4444" opacity={0.4} />
+            <Path d={`M ${width - 4} 4 L ${width - 35} 4 L ${width - 4} 35`} stroke="#FACC15" strokeWidth={3} fill="none" />
+
+            {/* Bottom-Left Corner Warning */}
+            <Path d={`M 0 ${height} L 40 ${height} L 0 ${height - 40} Z`} fill="#EF4444" opacity={0.4} />
+            <Path d={`M 4 ${height - 4} L 35 ${height - 4} L 4 ${height - 35}`} stroke="#FACC15" strokeWidth={3} fill="none" />
+
+            {/* Bottom-Right Corner Warning */}
+            <Path d={`M ${width} ${height} L ${width - 40} ${height} L ${width} ${height - 40} Z`} fill="#EF4444" opacity={0.4} />
+            <Path d={`M ${width - 4} ${height - 4} L ${width - 35} ${height - 4} L ${width - 4} ${height - 35}`} stroke="#FACC15" strokeWidth={3} fill="none" />
+          </G>
+        )}
+
+        {/* 3. OBSTACLES & GATES */}
         {gates.map((gate) => {
           const leftWallW = gate.xCenter - gate.gapWidth / 2;
           const rightWallX = gate.xCenter + gate.gapWidth / 2;
           const rightWallW = width - rightWallX;
-          const sawRadius = gate.sawbladeRadius || 28;
+          const sawRadius = 15;
 
           return (
             <G key={gate.id}>
@@ -55,7 +95,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 stroke="#06B6D4"
                 strokeWidth={2}
               />
-              <Circle x={leftWallW} y={gate.y} r={10} fill="#06B6D4" opacity={0.8} />
 
               {/* Right Wall Barrier */}
               <Rect
@@ -68,7 +107,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 stroke="#06B6D4"
                 strokeWidth={2}
               />
-              <Circle x={rightWallX} y={gate.y} r={10} fill="#06B6D4" opacity={0.8} />
 
               {/* Score Target Ring Glow Gate */}
               <Line
@@ -82,24 +120,38 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                 opacity={0.7}
               />
 
-              {/* SAWBLADE HAZARD PNG SPRITE */}
-              {(gate.type === 'sawblade' || gate.type === 'double_saw') && (
-                <G transform={`translate(${gate.xCenter}, ${gate.y}) rotate(${(gate.sawbladeAngle || 0) * (180 / Math.PI)})`}>
-                  <SvgImage
-                    href={SpriteAssets.sawblade}
-                    x={-sawRadius}
-                    y={-sawRadius}
-                    width={sawRadius * 2}
-                    height={sawRadius * 2}
-                    preserveAspectRatio="xMidYMid slice"
-                  />
-                </G>
+              {/* TWO SMALL SPINNING SAWBLADE HAZARD SPRITES ATTACHED TO BOTH WALL TIPS */}
+              {(gate.type === 'sawblade' || gate.type === 'double_saw' || gate.type === 'moving') && (
+                <>
+                  {/* Left Barrier Wall Tip Sawblade */}
+                  <G transform={`translate(${leftWallW}, ${gate.y}) rotate(${(gate.sawbladeAngle || 0) * (180 / Math.PI)})`}>
+                    <SvgImage
+                      href={sawbladeAsset}
+                      x={-sawRadius}
+                      y={-sawRadius}
+                      width={sawRadius * 2}
+                      height={sawRadius * 2}
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                  </G>
+                  {/* Right Barrier Wall Tip Sawblade */}
+                  <G transform={`translate(${rightWallX}, ${gate.y}) rotate(${-(gate.sawbladeAngle || 0) * (180 / Math.PI)})`}>
+                    <SvgImage
+                      href={sawbladeAsset}
+                      x={-sawRadius}
+                      y={-sawRadius}
+                      width={sawRadius * 2}
+                      height={sawRadius * 2}
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                  </G>
+                </>
               )}
             </G>
           );
         })}
 
-        {/* 2. ELASTIC ROPE DYNAMIC SPLINE */}
+        {/* 4. ELASTIC ROPE DYNAMIC SPLINE */}
         <Line
           x1={bodyA.x}
           y1={bodyA.y}
@@ -120,13 +172,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           opacity={0.8}
         />
 
-        {/* 3. PARTICLES & SPARKS PNG SPRITES */}
+        {/* 6. PARTICLES & SPARKS PNG SPRITES */}
         {particles.map((p) => {
           const pSize = Math.max(p.size * (1 - p.life / p.maxLife) * 2, 4);
           return (
             <G key={p.id} transform={`translate(${p.x - pSize / 2}, ${p.y - pSize / 2})`}>
               <SvgImage
-                href={SpriteAssets.star}
+                href={starAsset}
                 x={0}
                 y={0}
                 width={pSize}
@@ -137,20 +189,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           );
         })}
 
-        {/* 4. PLAYER ENTITY A (CAT HEAD PNG SPRITE) */}
-        <G transform={`translate(${bodyA.x}, ${bodyA.y}) rotate(${(bodyA.angle * 180) / Math.PI})`}>
-          {/* Active Pivot Glow Ring Sprite */}
-          {tether.pivotIndex === 0 && (
-            <SvgImage
-              href={SpriteAssets.ropeAnchor}
-              x={-bodyA.radius - 8}
-              y={-bodyA.radius - 8}
-              width={(bodyA.radius + 8) * 2}
-              height={(bodyA.radius + 8) * 2}
+        {/* 7. DANGER RED HAZARD PROXIMITY AURA RINGS */}
+        {dangerProximity > 0.02 && (
+          <G opacity={dangerProximity}>
+            <Circle
+              cx={bodyA.x}
+              cy={bodyA.y}
+              r={bodyA.radius + 6 + dangerProximity * 12}
+              fill="rgba(239, 68, 68, 0.25)"
+              stroke="#EF4444"
+              strokeWidth={3}
             />
-          )}
+            <Circle
+              cx={bodyB.x}
+              cy={bodyB.y}
+              r={bodyB.radius + 6 + dangerProximity * 12}
+              fill="rgba(239, 68, 68, 0.25)"
+              stroke="#EF4444"
+              strokeWidth={3}
+            />
+          </G>
+        )}
+
+        {/* 8. PLAYER ENTITY A (CAT HEAD PNG SPRITE) */}
+        <G transform={`translate(${bodyA.x}, ${bodyA.y}) rotate(${(bodyA.angle * 180) / Math.PI})`}>
           <SvgImage
-            href={SpriteAssets.cat}
+            href={catAsset}
             x={-bodyA.radius}
             y={-bodyA.radius}
             width={bodyA.radius * 2}
@@ -158,57 +222,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           />
         </G>
 
-        {/* 5. PLAYER ENTITY B (BOMB / ORB PNG SPRITE) */}
+        {/* 9. PLAYER ENTITY B (BOMB / ORB PNG SPRITE) */}
         <G transform={`translate(${bodyB.x}, ${bodyB.y}) rotate(${(bodyB.angle * 180) / Math.PI})`}>
-          {/* Active Pivot Glow Ring Sprite */}
-          {tether.pivotIndex === 1 && (
-            <SvgImage
-              href={SpriteAssets.ropeAnchor}
-              x={-bodyB.radius - 8}
-              y={-bodyB.radius - 8}
-              width={(bodyB.radius + 8) * 2}
-              height={(bodyB.radius + 8) * 2}
-            />
-          )}
           <SvgImage
-            href={SpriteAssets.bomb}
+            href={bombAsset}
             x={-bodyB.radius}
             y={-bodyB.radius}
             width={bodyB.radius * 2}
             height={bodyB.radius * 2}
           />
         </G>
-
-        {/* 6. SWING LAUNCH DIRECTION ARROW INDICATOR */}
-        {(() => {
-          const swingingBody = tether.pivotIndex === 0 ? bodyB : bodyA;
-          const launchAngle = tether.currentAngle + (tether.angularVelocity >= 0 ? Math.PI / 2 : -Math.PI / 2);
-          const arrowX = swingingBody.x + Math.cos(launchAngle) * 36;
-          const arrowY = swingingBody.y + Math.sin(launchAngle) * 36;
-          const isPointingUp = Math.sin(launchAngle) < -0.4;
-
-          return (
-            <G key="launch_indicator">
-              {/* Slingshot Trajectory Line */}
-              <Line
-                x1={swingingBody.x}
-                y1={swingingBody.y}
-                x2={arrowX}
-                y2={arrowY}
-                stroke={isPointingUp ? '#FACC15' : '#06B6D4'}
-                strokeWidth={3}
-                strokeDasharray="4,3"
-                opacity={0.9}
-              />
-              <Circle
-                cx={arrowX}
-                cy={arrowY}
-                r={6}
-                fill={isPointingUp ? '#FACC15' : '#06B6D4'}
-              />
-            </G>
-          );
-        })()}
       </Svg>
     </View>
   );

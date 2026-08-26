@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Animated, ImageBackground } from 'react-native';
-import { ArrowLeft, ArrowRight, Volume2, VolumeX, Smartphone, BarChart2, Home } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Volume2, VolumeX, Smartphone, BarChart2, Home, Code, Heart, Globe } from 'lucide-react-native';
 import { SpriteAssets } from '../../assets/spriteAssets';
 import { I18nService } from '../../i18n';
 import { StorageService } from '../../services/StorageService';
 import { audioHaptics } from '../../services/AudioHapticsService';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher/LanguageSwitcher';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -81,6 +82,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
             <View style={[styles.settingRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={[styles.labelGroup, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Globe size={20} color="#FACC15" />
+                <Text style={styles.settingLabel}>{I18nService.t('settings.language')}</Text>
+              </View>
+              <LanguageSwitcher />
+            </View>
+
+            <View style={[styles.settingRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={[styles.labelGroup, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Smartphone size={20} color={hapticsEnabled ? '#06B6D4' : '#64748B'} />
                 <Text style={styles.settingLabel}>{I18nService.t('settings.vibration')}</Text>
               </View>
@@ -111,9 +120,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             </View>
 
             <View style={[styles.statsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-              <Text style={styles.statLabel}>{I18nService.t('settings.maxCombo')}</Text>
-              <Text style={styles.statVal}>{stats.bestCombo}x</Text>
+              <Text style={styles.statLabel}>{I18nService.t('settings.masteryRate')}</Text>
+              <Text style={[styles.statVal, { color: '#EC4899' }]}>
+                {stats.gamesPlayed > 0 ? Math.min(100, Math.round((stats.totalNearMisses / (stats.gamesPlayed * 2.5)) * 100 + 20)) : 0}%
+              </Text>
             </View>
+          </View>
+
+          {/* Orivex Tech Team & Arab Dedication Card */}
+          <View style={styles.aboutCard}>
+            <View style={[styles.aboutHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Code size={20} color="#EC4899" />
+              <Text style={styles.aboutHeaderTitle}>{I18nService.t('about.developerHeader')}</Text>
+            </View>
+            <Text style={[styles.aboutText, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {I18nService.t('about.developerDesc')}
+            </Text>
+
+            <View style={styles.aboutDivider} />
+
+            <View style={[styles.aboutHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Heart size={20} color="#FACC15" />
+              <Text style={[styles.aboutHeaderTitle, { color: '#FACC15' }]}>
+                {I18nService.t('about.dedicationHeader')}
+              </Text>
+            </View>
+            <Text style={[styles.aboutText, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {I18nService.t('about.dedicationDesc')}
+            </Text>
           </View>
 
           {/* Save / Back Button */}
@@ -249,5 +283,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 0.5,
+  },
+  aboutCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#EC4899',
+  },
+  aboutHeaderRow: {
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  aboutHeaderTitle: {
+    color: '#EC4899',
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  aboutText: {
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  aboutDivider: {
+    height: 1,
+    backgroundColor: '#334155',
+    marginVertical: 14,
   },
 });

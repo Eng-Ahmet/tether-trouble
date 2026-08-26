@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground } from 'react-native';
-import { Play, Settings, Trophy, User, BookOpen, MessageSquare } from 'lucide-react-native';
+import { Play, Settings, Trophy, User, BookOpen, MessageSquare, Award, Info, Shield } from 'lucide-react-native';
 import { SpriteAssets } from '../../assets/spriteAssets';
 import { I18nService } from '../../i18n';
 import { StorageService } from '../../services/StorageService';
@@ -12,6 +12,9 @@ interface MainMenuScreenProps {
   onOpenSettings: () => void;
   onOpenProfile: () => void;
   onOpenTutorial: () => void;
+  onOpenAbout: () => void;
+  onOpenPrivacy: () => void;
+  onOpenBadges: () => void;
 }
 
 export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
@@ -19,6 +22,9 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
   onOpenSettings,
   onOpenProfile,
   onOpenTutorial,
+  onOpenAbout,
+  onOpenPrivacy,
+  onOpenBadges,
 }) => {
   const [, setLangTick] = useState<number>(0);
   const [randomCatQuote, setRandomCatQuote] = useState<string>(I18nService.getRandomQuote());
@@ -87,24 +93,45 @@ export const MainMenuScreen: React.FC<MainMenuScreenProps> = ({
             <Text style={styles.playText}>{I18nService.t('menu.play')}</Text>
           </TouchableOpacity>
 
+          {/* Primary Action Button Row (Profile, Badges, Settings) */}
           <View style={[styles.subButtonRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenTutorial}>
-              <BookOpen size={18} color="#FACC15" />
-              <Text style={[styles.subButtonText, { color: '#FACC15' }]}>
-                {I18nService.t('menu.practice')}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenProfile}>
-              <User size={18} color="#EC4899" />
+              <User size={16} color="#EC4899" />
               <Text style={[styles.subButtonText, { color: '#EC4899' }]}>
                 {I18nService.t('menu.profile')}
               </Text>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenBadges}>
+              <Award size={16} color="#FACC15" />
+              <Text style={[styles.subButtonText, { color: '#FACC15' }]}>
+                {I18nService.t('profile.badgesHeader').split(' ')[0]}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.subButton} activeOpacity={0.8} onPress={onOpenSettings}>
-              <Settings size={18} color="#06B6D4" />
+              <Settings size={16} color="#06B6D4" />
               <Text style={styles.subButtonText}>{I18nService.t('menu.settings')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Secondary Action Button Row (Practice, About Us, Privacy Policy) */}
+          <View style={[styles.subButtonRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8} onPress={onOpenTutorial}>
+              <BookOpen size={14} color="#38BDF8" style={{ marginRight: 4 }} />
+              <Text style={[styles.secondaryButtonText, { color: '#38BDF8' }]}>
+                {I18nService.t('menu.practice')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8} onPress={onOpenAbout}>
+              <Info size={14} color="#EC4899" style={{ marginRight: 4 }} />
+              <Text style={styles.secondaryButtonText}>{I18nService.t('about.title')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8} onPress={onOpenPrivacy}>
+              <Shield size={14} color="#06B6D4" style={{ marginRight: 4 }} />
+              <Text style={styles.secondaryButtonText}>{I18nService.t('privacy.title')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -125,12 +152,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 54,
-    paddingBottom: 40,
+    paddingBottom: 74,
   },
   topRow: {
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    marginBottom: 24,
   },
   highScoreBadge: {
     flexDirection: 'row',
@@ -153,9 +181,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   heroImageLarge: {
-    width: 220,
-    height: 220,
-    marginBottom: 12,
+    width: 180,
+    height: 180,
+    marginBottom: 10,
   },
   titleText: {
     color: '#EC4899',
@@ -226,6 +254,23 @@ const styles = StyleSheet.create({
   subButtonText: {
     color: '#06B6D4',
     fontSize: 12,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#0F172A',
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  secondaryButtonText: {
+    color: '#94A3B8',
+    fontSize: 11,
     fontWeight: '800',
   },
 });

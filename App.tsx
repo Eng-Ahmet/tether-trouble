@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableWithoutFeedback, useWindowDimensions, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 import { GameCanvas } from './src/components/GameCanvas/GameCanvas';
 import { ScoreHUD } from './src/components/ScoreHUD/ScoreHUD';
 import { GameOverModal } from './src/screens/GameOver/GameOverModal';
@@ -9,6 +10,9 @@ import { MainMenuScreen } from './src/screens/MainMenu/MainMenuScreen';
 import { SettingsModal } from './src/screens/Settings/SettingsModal';
 import { TutorialModal } from './src/components/TutorialModal/TutorialModal';
 import { ProfileModal } from './src/screens/Profile/ProfileModal';
+import { BadgesModal } from './src/screens/Badges/BadgesModal';
+import { AboutModal } from './src/screens/About/AboutModal';
+import { PrivacyPolicyModal } from './src/screens/Privacy/PrivacyPolicyModal';
 import { InteractiveTutorialScreen } from './src/screens/Tutorial/InteractiveTutorialScreen';
 import { PhysicsEngine, GAME_CONSTANTS } from './src/game/engine/PhysicsEngine';
 import { GameStatus, MemeFailSnapshot, ObstacleGate, PlayerTetherState, VisualParticle } from './src/types/game';
@@ -16,7 +20,10 @@ import { audioHaptics } from './src/services/AudioHapticsService';
 import { StorageService } from './src/services/StorageService';
 import { I18nService } from './src/i18n';
 
-type AppScreen = 'SPLASH' | 'MAIN_MENU' | 'TUTORIAL' | 'PRACTICE' | 'PROFILE' | 'PLAYING' | 'SETTINGS';
+// Hide native splash screen as soon as possible
+ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
+
+type AppScreen = 'SPLASH' | 'MAIN_MENU' | 'TUTORIAL' | 'PRACTICE' | 'PROFILE' | 'PLAYING' | 'SETTINGS' | 'ABOUT' | 'PRIVACY' | 'BADGES';
 
 export default function App() {
   const { width, height } = useWindowDimensions();
@@ -26,6 +33,11 @@ export default function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>('SPLASH');
   const [gameStatus, setGameStatus] = useState<GameStatus>('IDLE');
   const gameStatusRef = useRef<GameStatus>('IDLE');
+
+  useEffect(() => {
+    // Immediately dismiss Expo native splash screen on mount
+    ExpoSplashScreen.hideAsync().catch(() => {});
+  }, []);
 
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
@@ -77,8 +89,9 @@ export default function App() {
 
     tetherRef.current = PhysicsEngine.initTetherState(screenWidth, screenHeight);
     gatesRef.current = [
-      PhysicsEngine.generateObstacle('gate_start_1', screenHeight - 700, screenWidth, 1, screenWidth / 2),
-      PhysicsEngine.generateObstacle('gate_start_2', screenHeight - 1100, screenWidth, 1),
+      PhysicsEngine.generateObstacle('gate_start_1', -150, screenWidth, 1, screenWidth / 2),
+      PhysicsEngine.generateObstacle('gate_start_2', -150 - GAME_CONSTANTS.GATE_SPACING, screenWidth, 1),
+      PhysicsEngine.generateObstacle('gate_start_3', -150 - GAME_CONSTANTS.GATE_SPACING * 2, screenWidth, 1),
     ];
     particlesRef.current = [];
 
@@ -146,12 +159,13 @@ export default function App() {
       }
     });
 
-    // Remove gates below screen bottom and spawn new top gates
+    // Remove gates below screen bottom and spawn new top gates strictly above top screen boundary (y <= -150)
     if (gatesRef.current.length > 0 && gatesRef.current[0].y > screenHeight + 100) {
       gatesRef.current.shift();
-      const topGateY = gatesRef.current[gatesRef.current.length - 1].y - GAME_CONSTANTS.GATE_SPACING;
+      const highestY = Math.min(...gatesRef.current.map((g) => g.y));
+      const newGateY = Math.min(highestY - GAME_CONSTANTS.GATE_SPACING, -150);
       const newGateId = `gate_${Date.now()}_${Math.random()}`;
-      gatesRef.current.push(PhysicsEngine.generateObstacle(newGateId, topGateY, screenWidth, difficultyRef.current));
+      gatesRef.current.push(PhysicsEngine.generateObstacle(newGateId, newGateY, screenWidth, difficultyRef.current));
     }
 
     // 5. Update visual particles
@@ -206,16 +220,15 @@ export default function App() {
       const currentBest = StorageService.getHighScoreSync();
       if (isNewHigh) setHighScore(currentBest);
 
-      StorageService.updateStats(nearMissRef.current, comboRef.current);
-
-      const randomQuote = I18nService.getRandomQuote();
+      const localizedDeathCause = I18nService.t(`hitCauses.${hitCauseText}`);
+      const targetedQuote = I18nService.getCauseQuote(hitCauseText);
       setFailSnapshot({
-        quote: randomQuote,
+        quote: targetedQuote,
         score: finalScore,
         highScore: currentBest,
         nearMissCount: nearMissRef.current,
         maxCombo: comboRef.current,
-        deathCause: hitCauseText,
+        deathCause: localizedDeathCause,
         snapshotTime: new Date().toLocaleTimeString(),
       });
 
@@ -230,7 +243,10 @@ export default function App() {
   useEffect(() => {
     if (gameStatus === 'PLAYING') {
       gameStatusRef.current = 'PLAYING';
+      audioHaptics.startBGM();
       frameIdRef.current = requestAnimationFrame(gameLoop);
+    } else if (gameStatus === 'GAMEOVER') {
+      audioHaptics.stopBGM();
     }
     return () => {
       if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
@@ -239,6 +255,7 @@ export default function App() {
 
   // Screen Tap Handler: Slingshot & Pivot Swap!
   const handleTap = () => {
+    audioHaptics.unlockAudio();
     if (gameStatus === 'PLAYING') {
       tetherRef.current = PhysicsEngine.togglePivot(tetherRef.current);
       audioHaptics.playTapSlingSFX();
@@ -266,6 +283,9 @@ export default function App() {
         onOpenSettings={() => setAppScreen('SETTINGS')}
         onOpenProfile={() => setAppScreen('PROFILE')}
         onOpenTutorial={() => setAppScreen('PRACTICE')}
+        onOpenAbout={() => setAppScreen('ABOUT')}
+        onOpenPrivacy={() => setAppScreen('PRIVACY')}
+        onOpenBadges={() => setAppScreen('BADGES')}
       />
     );
   }
@@ -295,9 +315,9 @@ export default function App() {
     );
   }
 
-  // 5. PROFILE & ACHIEVEMENTS MODAL SCREEN
+  // 5. PROFILE MODAL SCREEN
   if (appScreen === 'PROFILE') {
-    return <ProfileModal onClose={() => setAppScreen('MAIN_MENU')} />;
+    return <ProfileModal onClose={() => setAppScreen('MAIN_MENU')} onOpenBadges={() => setAppScreen('BADGES')} />;
   }
 
   // 6. SETTINGS MODAL SCREEN
@@ -305,10 +325,25 @@ export default function App() {
     return <SettingsModal onClose={() => setAppScreen('MAIN_MENU')} />;
   }
 
+  // 7. ABOUT US SCREEN
+  if (appScreen === 'ABOUT') {
+    return <AboutModal onClose={() => setAppScreen('MAIN_MENU')} />;
+  }
+
+  // 8. PRIVACY POLICY SCREEN
+  if (appScreen === 'PRIVACY') {
+    return <PrivacyPolicyModal onClose={() => setAppScreen('MAIN_MENU')} />;
+  }
+
+  // 9. DEDICATED 500 MYSTERY BADGES SCREEN
+  if (appScreen === 'BADGES') {
+    return <BadgesModal onClose={() => setAppScreen('MAIN_MENU')} />;
+  }
+
   // 4. GAMEPLAY SCREEN & GAME OVER OVERLAY
   return (
     <View style={styles.container}>
-      <TouchableWithoutFeedback onPress={handleTap} disabled={gameStatus === 'GAMEOVER'}>
+      <TouchableWithoutFeedback onPressIn={handleTap} disabled={gameStatus === 'GAMEOVER'}>
         <View style={styles.container}>
           <StatusBar style="light" hidden />
 
@@ -322,18 +357,13 @@ export default function App() {
             screenShakeOffset={shakeOffset}
           />
 
-          {/* Floating Minimal HUD with Home button */}
+          {/* Floating Minimal HUD */}
           {gameStatus === 'PLAYING' && (
             <ScoreHUD
               score={score}
               highScore={highScore}
               combo={combo}
               nearMissCount={nearMissCount}
-              onGoHome={() => {
-                gameStatusRef.current = 'IDLE';
-                setGameStatus('IDLE');
-                setAppScreen('MAIN_MENU');
-              }}
             />
           )}
         </View>

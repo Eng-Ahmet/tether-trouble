@@ -15,6 +15,7 @@ export const LanguageSwitcher: React.FC = () => {
   const selectLanguage = (targetLang: LanguageCode) => {
     if (lang !== targetLang) {
       audioHaptics.triggerLightHaptic();
+      setLang(targetLang);
       I18nService.setLanguage(targetLang);
     }
   };
@@ -27,7 +28,6 @@ export const LanguageSwitcher: React.FC = () => {
         activeOpacity={0.8}
         onPress={() => selectLanguage('ar')}
       >
-        <Text style={styles.flagText}>🇸🇦</Text>
         <Text style={[styles.labelText, lang === 'ar' && styles.labelActive]}>AR</Text>
       </TouchableOpacity>
 
@@ -37,7 +37,6 @@ export const LanguageSwitcher: React.FC = () => {
         activeOpacity={0.8}
         onPress={() => selectLanguage('en')}
       >
-        <Text style={styles.flagText}>🇺🇸</Text>
         <Text style={[styles.labelText, lang === 'en' && styles.labelActive]}>EN</Text>
       </TouchableOpacity>
     </View>
@@ -49,20 +48,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#0F172A',
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 3,
     borderWidth: 1.5,
     borderColor: '#334155',
     gap: 4,
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pillActive: {
     backgroundColor: '#1E293B',
@@ -73,14 +71,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 6,
   },
-  flagText: {
-    fontSize: 18,
-  },
   labelText: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   labelActive: {
     color: '#06B6D4',

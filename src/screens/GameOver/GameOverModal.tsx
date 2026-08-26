@@ -123,8 +123,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = React.memo(({ snapsho
                 </View>
 
                 <View style={[styles.subStatPill, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-                  <Flame size={14} color="#EC4899" />
-                  <Text style={styles.subStatText}>{snapshot.maxCombo}x MAX</Text>
+                  <Award size={14} color="#EC4899" />
+                  <Text style={styles.subStatText}>
+                    {Math.min(100, Math.round(snapshot.score * 10 + snapshot.nearMissCount * 12))}% {I18nService.t('stats.masteryRate')}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -149,7 +151,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = React.memo(({ snapsho
               </View>
             </View>
 
-            <Text style={styles.tipText}>{I18nService.t('gameOver.tip')}</Text>
+            <Text style={styles.tipText}>{I18nService.getSmartTip()}</Text>
           </ScrollView>
         </Animated.View>
       </ImageBackground>

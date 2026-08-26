@@ -3,14 +3,14 @@ import { ObstacleGate, PlayerTetherState, VisualParticle } from '../../types/gam
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 360,
   CANVAS_HEIGHT: 640,
-  ROPE_LENGTH: 115, // Agile tether line for tight 360-deg rotation control
+  ROPE_LENGTH: 75, // Shorter, tighter tether line for agile control and narrow gate maneuvering
   ENTITY_RADIUS: 20, // Slightly more forgiving collision radius
   ROTATION_SPEED_BASE: 0.058, // Nimble rotation speed for easy 360-deg loops
   ROTATION_SPEED_MAX: 0.10,
   WORLD_SPEED_BASE: 2.2, // Smoother world travel speed for better reaction time
   WORLD_SPEED_MAX: 6.5,
   GATE_SPACING: 270,
-  SAWBLADE_BASE_RADIUS: 25,
+  SAWBLADE_BASE_RADIUS: 15,
   NEAR_MISS_DISTANCE: 16, // Margin for near miss score bonus
 };
 
@@ -19,7 +19,7 @@ export const MEME_FAIL_QUOTES = [
   "1 millimeter away from viral glory!",
   "Calculated... but man, am I bad at math",
   "The sawblade won this round",
-  "Cat go BOOM",
+  "Gravity wins again!",
   "My thumb betrayed me",
   "Top 1% unexpected catastrophe",
   "Tether snapped, dignity gone",
@@ -64,13 +64,15 @@ export class PhysicsEngine {
 
   public static togglePivot(tether: PlayerTetherState): PlayerTetherState {
     const newPivot = tether.pivotIndex === 0 ? 1 : 0;
-    // Smooth angular velocity swap
-    const newAngularVel = tether.angularVelocity * (tether.angularVelocity > 0 ? 1.03 : -1.03);
+    // Invert rotation direction on every tap (alternating clockwise & counter-clockwise)
+    const currentSpeed = Math.abs(tether.angularVelocity);
+    const newDir = tether.angularVelocity > 0 ? -1 : 1;
+    const newAngularVel = newDir * Math.min(currentSpeed * 1.03, GAME_CONSTANTS.ROTATION_SPEED_MAX);
 
     return {
       ...tether,
       pivotIndex: newPivot,
-      angularVelocity: Math.min(Math.max(newAngularVel, -GAME_CONSTANTS.ROTATION_SPEED_MAX), GAME_CONSTANTS.ROTATION_SPEED_MAX),
+      angularVelocity: newAngularVel,
     };
   }
 
@@ -123,12 +125,10 @@ export class PhysicsEngine {
     const types: ObstacleGate['type'][] = ['standard', 'sawblade', 'moving', 'double_saw'];
     let selectedType: ObstacleGate['type'] = 'standard';
 
-    if (difficulty > 3) {
-      const rand = Math.random();
-      if (rand > 0.70) selectedType = 'sawblade';
-      else if (rand > 0.50) selectedType = 'moving';
-      else if (rand > 0.90) selectedType = 'double_saw';
-    }
+    const rand = Math.random();
+    if (rand > 0.40) selectedType = 'sawblade';
+    else if (rand > 0.20) selectedType = 'moving';
+    else if (rand > 0.85) selectedType = 'double_saw';
 
     return {
       id,
@@ -138,9 +138,9 @@ export class PhysicsEngine {
       passed: false,
       type: selectedType,
       speedX: selectedType === 'moving' ? (Math.random() > 0.5 ? 1.2 : -1.2) * (1 + difficulty * 0.08) : 0,
-      sawbladeRadius: GAME_CONSTANTS.SAWBLADE_BASE_RADIUS,
+      sawbladeRadius: 15,
       sawbladeAngle: 0,
-      sawbladeRotationSpeed: 0.06 + Math.random() * 0.04,
+      sawbladeRotationSpeed: 0.12 + Math.random() * 0.06,
     };
   }
 
@@ -156,9 +156,12 @@ export class PhysicsEngine {
     const leftWallEdge = gate.xCenter - gate.gapWidth / 2;
     const rightWallEdge = gate.xCenter + gate.gapWidth / 2;
 
-    // Gate vertical bounds tolerance
-    const gateTop = gate.y - 16;
-    const gateBottom = gate.y + 16;
+    // Use precise collision radius matching visual sprite boundaries (13px instead of 20px)
+    const colRadius = 13;
+
+    // Gate vertical bounds (match visual barrier height y ± 10)
+    const gateTop = gate.y - 10;
+    const gateBottom = gate.y + 10;
 
     let collided = false;
     let nearMiss = false;
@@ -166,38 +169,38 @@ export class PhysicsEngine {
 
     [bodyA, bodyB].forEach((body) => {
       // Check if body is in horizontal slice of gate
-      if (body.y + body.radius > gateTop && body.y - body.radius < gateBottom) {
-        if (body.x - body.radius < leftWallEdge || body.x + body.radius > rightWallEdge) {
+      if (body.y + colRadius > gateTop && body.y - colRadius < gateBottom) {
+        if (body.x - colRadius < leftWallEdge || body.x + colRadius > rightWallEdge) {
           collided = true;
-          hitCause = 'اصطدام بالحاجز النيون';
+          hitCause = 'gate';
         }
       }
 
-      // Sawblade specific circular distance collision & near miss
-      if (gate.type === 'sawblade' || gate.type === 'double_saw') {
-        const sawX = gate.xCenter;
-        const sawY = gate.y;
-        const dist = Math.hypot(body.x - sawX, body.y - sawY);
-        const hitDist = body.radius + (gate.sawbladeRadius || GAME_CONSTANTS.SAWBLADE_BASE_RADIUS);
+      // Sawblade hazard collision: ANY contact with sawblades instantly results in GAME OVER
+      const sawR = gate.sawbladeRadius || 15;
+      const sawHitDist = colRadius + sawR * 1.15;
+      const sawPositions = [leftWallEdge, rightWallEdge];
 
-        if (dist < hitDist) {
+      sawPositions.forEach((sawX) => {
+        const dist = Math.hypot(body.x - sawX, body.y - gate.y);
+        if (dist < sawHitDist) {
           collided = true;
-          hitCause = 'تمزيق بالمنشار النيون';
-        } else if (dist < hitDist + GAME_CONSTANTS.NEAR_MISS_DISTANCE) {
-          nearMiss = true;
+          hitCause = 'sawblade';
         }
-      }
+      });
     });
 
-    // Also check screen boundary collision with safe tolerance margin
-    if (
-      bodyA.x - bodyA.radius < -15 ||
-      bodyA.x + bodyA.radius > width + 15 ||
-      bodyB.x - bodyB.radius < -15 ||
-      bodyB.x + bodyB.radius > width + 15
-    ) {
-      collided = true;
-      hitCause = 'ارتطم بالجدار الجانبي';
+    // Check screen boundary collision (Side walls and Top ceiling limit)
+    if (bodyA.x < -10 || bodyA.x > width + 10 || bodyB.x < -10 || bodyB.x > width + 10) {
+      if (!collided) {
+        collided = true;
+        hitCause = 'wall';
+      }
+    } else if (bodyA.y < 15 || bodyB.y < 15) {
+      if (!collided) {
+        collided = true;
+        hitCause = 'ceiling';
+      }
     }
 
     return { collided, nearMiss, hitCause };
@@ -222,5 +225,61 @@ export class PhysicsEngine {
       });
     }
     return particles;
+  }
+
+  public static calculateDangerProximity(
+    tether: PlayerTetherState,
+    gates: ObstacleGate[],
+    width: number
+  ): number {
+    const dangerDistThreshold = 55;
+    let maxDanger = 0;
+
+    const bodies = [tether.bodyA, tether.bodyB];
+
+    bodies.forEach((body) => {
+      // 1. Distance to screen side walls
+      const distLeft = body.x;
+      const distRight = width - body.x;
+
+      if (distLeft < dangerDistThreshold) {
+        const danger = 1 - Math.max(0, distLeft) / dangerDistThreshold;
+        if (danger > maxDanger) maxDanger = danger;
+      }
+      if (distRight < dangerDistThreshold) {
+        const danger = 1 - Math.max(0, distRight) / dangerDistThreshold;
+        if (danger > maxDanger) maxDanger = danger;
+      }
+
+      // 2. Distance to active obstacle gates & sawblades
+      gates.forEach((gate) => {
+        const distY = Math.abs(body.y - gate.y);
+        if (distY < 60) {
+          const leftWallEdge = gate.xCenter - gate.gapWidth / 2;
+          const rightWallEdge = gate.xCenter + gate.gapWidth / 2;
+
+          // Sawblades proximity
+          const sawR = gate.sawbladeRadius || 15;
+          const sawPositions = [leftWallEdge, rightWallEdge];
+
+          sawPositions.forEach((sawX) => {
+            const distSaw = Math.hypot(body.x - sawX, body.y - gate.y);
+            const dangerDist = sawR + 45;
+            if (distSaw < dangerDist) {
+              const danger = 1 - Math.max(0, distSaw) / dangerDist;
+              if (danger > maxDanger) maxDanger = danger;
+            }
+          });
+
+          // Gate wall barriers proximity
+          if (body.x < leftWallEdge + 25 || body.x > rightWallEdge - 25) {
+            const danger = 1 - distY / 60;
+            if (danger > maxDanger) maxDanger = danger;
+          }
+        }
+      });
+    });
+
+    return Math.min(1, Math.max(0, maxDanger));
   }
 }
