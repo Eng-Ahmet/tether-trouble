@@ -18,6 +18,14 @@ export class AssetPreloaderService {
       return;
     }
 
+    // Safety fallback timer: guarantee preloader completes in max 1.5s in standalone APK
+    const fallbackTimer = setTimeout(() => {
+      if (!this.isReady) {
+        this.isReady = true;
+        if (onProgress) onProgress(1.0, I18nService.t('splash.almostReady'));
+      }
+    }, 1500);
+
     try {
       // 1. Instant i18n & Storage preload
       if (onProgress) onProgress(0.2, I18nService.t('splash.preparing'));
@@ -25,17 +33,19 @@ export class AssetPreloaderService {
 
       if (onProgress) onProgress(0.5, I18nService.t('splash.loading'));
 
-      // 2. Parallel non-blocking asset preloading
+      // 2. Non-blocking image asset preloading
       await Promise.all(
         SpriteAssetList.map((assetRef) =>
           Asset.loadAsync(assetRef).catch(() => {})
         )
       );
 
+      clearTimeout(fallbackTimer);
       this.isReady = true;
       if (onProgress) onProgress(1.0, I18nService.t('splash.almostReady'));
     } catch (error) {
       console.log('AssetPreloaderService initialization error:', error);
+      clearTimeout(fallbackTimer);
       this.isReady = true;
       if (onProgress) onProgress(1.0, 'Ready');
     }
