@@ -3,9 +3,9 @@ import { ObstacleGate, PlayerTetherState, VisualParticle } from '../../types/gam
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 360,
   CANVAS_HEIGHT: 640,
-  ROPE_LENGTH: 135, // Lengthened tether line for smoother swing radius
+  ROPE_LENGTH: 115, // Agile tether line for tight 360-deg rotation control
   ENTITY_RADIUS: 20, // Slightly more forgiving collision radius
-  ROTATION_SPEED_BASE: 0.052, // Smoother rotation speed for easy timing
+  ROTATION_SPEED_BASE: 0.058, // Nimble rotation speed for easy 360-deg loops
   ROTATION_SPEED_MAX: 0.10,
   WORLD_SPEED_BASE: 2.2, // Smoother world travel speed for better reaction time
   WORLD_SPEED_MAX: 6.5,

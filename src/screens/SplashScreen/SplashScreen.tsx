@@ -28,7 +28,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       setStatusText(status);
 
       if (prog >= 1.0) {
-        // Hold splash screen for 2.0s to view clean artwork
+        // Hold splash screen for 2.5s to view clean artwork poster
         setTimeout(() => {
           Animated.timing(fadeOutAnim, {
             toValue: 0,
@@ -37,7 +37,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
           }).start(() => {
             onFinish();
           });
-        }, 2000);
+        }, 2500);
       }
     });
   }, [fadeOutAnim, onFinish, pulseAnim]);
