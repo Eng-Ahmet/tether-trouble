@@ -28,16 +28,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
       setStatusText(status);
 
       if (prog >= 1.0) {
-        // Hold splash screen for 2.5s to view clean artwork poster
-        setTimeout(() => {
-          Animated.timing(fadeOutAnim, {
-            toValue: 0,
-            duration: 350,
-            useNativeDriver: true,
-          }).start(() => {
-            onFinish();
-          });
-        }, 2500);
+        // Instant transition as soon as assets are ready (0ms delay)
+        Animated.timing(fadeOutAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }).start(() => {
+          onFinish();
+        });
       }
     });
   }, [fadeOutAnim, onFinish, pulseAnim]);
